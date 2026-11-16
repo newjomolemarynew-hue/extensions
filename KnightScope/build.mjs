@@ -111,7 +111,8 @@ try {
   panelCss = panelCss.replaceAll("#ff7629", "#4b8dff").replaceAll("rgb(255 118 41 / 0.12)", "rgb(75 141 255 / 0.14)");
   panelCss += "\n/* KnightScope identity */\n.head > svg { display: none; }\n.head::before { content: '♞'; color: #78adff; font-size: 25px; line-height: 1; }\n";
   writeFileSync(panelCssPath, panelCss);
-\n  cpSync(join(upstreamRoot, "LICENSE"), join(output, "LICENSE-WHATSTHISPOSITION"));
+
+  cpSync(join(upstreamRoot, "LICENSE"), join(output, "LICENSE-WHATSTHISPOSITION"));
   if (existsSync(join(bestMoveSource, "LICENSE"))) cpSync(join(bestMoveSource, "LICENSE"), join(output, "LICENSE-BEST-MOVE"));
   console.log("KnightScope merged extension built in KnightScope/dist.");
 } finally { rmSync(temp, { recursive: true, force: true }); }
