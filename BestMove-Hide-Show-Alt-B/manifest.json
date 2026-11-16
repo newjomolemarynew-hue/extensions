@@ -1,0 +1,104 @@
+{
+  "update_url": "https://clients2.google.com/service/update2/crx",
+  "manifest_version": 3,
+  "name": "Best Move",
+  "version": "3.4.2",
+  "description": "Best-move arrows, human-like suggestions (Maia), game analysis, a piece/board Studio and a Spotify mini player for chess.com.",
+  "permissions": [
+    "offscreen",
+    "storage",
+    "scripting",
+    "windows"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; img-src 'self' data: https://assets-themes.chess.com https://images.chesscomfiles.com; connect-src 'self' https://api.chess.com https://*.scdn.co https://*.spotifycdn.com https://best-move-style-atlas.lovable.app"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.chess.com/*"
+      ],
+      "js": [
+        "page.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.chess.com/*"
+      ],
+      "js": [
+        "chess.js",
+        "brain.js",
+        "liquid.js",
+        "customization/pieces.js",
+        "customization/fx.js",
+        "customization/board-fx.js",
+        "customization/customization.js",
+        "features/fx-live.js",
+        "features/spotify-widget.js",
+        "features/board-state.js",
+        "features/game-mode.js",
+        "features/player-ratings.js",
+        "features/opponent-auto-config.js",
+        "features/engine-client.js",
+        "features/arrow-renderer.js",
+        "features/auto-play.js",
+        "features/panel-template.js",
+        "features/feedback.js",
+        "features/review-prompt.js",
+        "features/whats-new.js",
+        "features/live-panel.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://open.spotify.com/*"
+      ],
+      "js": [
+        "features/spotify.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": [
+    "https://api.chess.com/*",
+    "https://www.chess.com/*",
+    "https://open.spotify.com/*",
+    "https://*.scdn.co/*",
+    "https://*.spotifycdn.com/*",
+    "https://best-move-style-atlas.lovable.app/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "features/bot-ratings.json",
+        "features/panel.css"
+      ],
+      "matches": [
+        "https://www.chess.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "Open Best Move window",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}
