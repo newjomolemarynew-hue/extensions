@@ -18,7 +18,7 @@ function extractZip(zip, destination) {
 function copyBestMoveFiles(source, destination) {
   mkdirSync(destination, { recursive: true });
   for (const entry of readdirSync(source, { withFileTypes: true })) {
-    if (["README.txt", "manifest.json", "background.js", "engine", "content.js"].includes(entry.name)) continue;\n    if (entry.name === "content.js") { cpSync(join(source, entry.name), join(destination, "bm-content.js")); continue; }
+    if (["README.txt", "manifest.json", "background.js", "engine"].includes(entry.name)) continue;\n    if (entry.name === "content.js") { cpSync(join(source, entry.name), join(destination, "bm-content.js")); continue; }
     const from = join(source, entry.name), to = join(destination, entry.name);
     if (entry.isDirectory()) cpSync(from, to, { recursive: true });
     else cpSync(from, to);
