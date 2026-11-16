@@ -1,4 +1,4 @@
-name: KnightScope integration build
+name: KnightScope merged build
 
 on:
   push:
@@ -15,26 +15,16 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: KnightScope/package.json
-
-      - name: Build both extension projects
+      - name: Build merged extension
         run: node KnightScope/build.mjs
-
-      - name: Package build outputs
-        run: |
-          cd KnightScope/dist
-          zip -qr ../KnightScope-integration-build.zip .
-
-      - name: Upload build artifact
+      - name: Upload installable extension folder
         uses: actions/upload-artifact@v4
         with:
-          name: KnightScope-integration-build
-          path: KnightScope/KnightScope-integration-build.zip
+          name: KnightScope-test-build
+          path: KnightScope/dist/
           if-no-files-found: error
           retention-days: 14

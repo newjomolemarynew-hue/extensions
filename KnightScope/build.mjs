@@ -18,7 +18,7 @@ function extractZip(zip, destination) {
 function copyBestMoveFiles(source, destination) {
   mkdirSync(destination, { recursive: true });
   for (const entry of readdirSync(source, { withFileTypes: true })) {
-    if (["README.txt", "manifest.json", "background.js", "engine"].includes(entry.name)) continue;
+    if (["README.txt", "manifest.json", "background.js", "engine", "content.js"].includes(entry.name)) continue;\n    if (entry.name === "content.js") { cpSync(join(source, entry.name), join(destination, "bm-content.js")); continue; }
     const from = join(source, entry.name), to = join(destination, entry.name);
     if (entry.isDirectory()) cpSync(from, to, { recursive: true });
     else cpSync(from, to);
@@ -79,7 +79,7 @@ try {
   const bmManifest = JSON.parse(readFileSync(join(bestMoveSource, "manifest.json"), "utf8"));
   const permissions = [...new Set([...(wtpManifest.permissions || []), ...(bmManifest.permissions || [])])];
   const hostPermissions = [...new Set([...(wtpManifest.host_permissions || []), ...(bmManifest.host_permissions || [])])];
-  const contentScripts = [...(bmManifest.content_scripts || []), ...(wtpManifest.content_scripts || [])];
+  const bmContentScripts = (bmManifest.content_scripts || []).map((entry) => ({ ...entry, js: (entry.js || []).map((file) => file === "content.js" ? "bm-content.js" : file) }));\n  const contentScripts = [...bmContentScripts, ...(wtpManifest.content_scripts || [])];
   const resources = [...(wtpManifest.web_accessible_resources || []), ...(bmManifest.web_accessible_resources || [])];
   const manifest = {
     manifest_version: 3, name: "KnightScope", short_name: "KnightScope", version: "1.0.0",
