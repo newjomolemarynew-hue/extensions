@@ -1,0 +1,10 @@
+{
+  "name": "knightscope-build",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Unified build entry point for the KnightScope extension integration.",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}

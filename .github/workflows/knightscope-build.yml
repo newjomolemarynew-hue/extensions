@@ -1,0 +1,40 @@
+name: KnightScope integration build
+
+on:
+  push:
+    branches:
+      - knightscope-combined
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: KnightScope/package.json
+
+      - name: Build both extension projects
+        run: node KnightScope/build.mjs
+
+      - name: Package build outputs
+        run: |
+          cd KnightScope/dist
+          zip -qr ../KnightScope-integration-build.zip .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KnightScope-integration-build
+          path: KnightScope/KnightScope-integration-build.zip
+          if-no-files-found: error
+          retention-days: 14
