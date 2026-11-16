@@ -80,7 +80,8 @@ try {
   const bmManifest = JSON.parse(readFileSync(join(bestMoveSource, "manifest.json"), "utf8"));
   const permissions = [...new Set([...(wtpManifest.permissions || []), ...(bmManifest.permissions || [])])];
   const hostPermissions = [...new Set([...(wtpManifest.host_permissions || []), ...(bmManifest.host_permissions || [])])];
-  const bmContentScripts = (bmManifest.content_scripts || []).map((entry) => ({ ...entry, js: (entry.js || []).map((file) => file === "content.js" ? "bm-content.js" : file) }));\n  const contentScripts = [...bmContentScripts, ...(wtpManifest.content_scripts || [])];
+  const bmContentScripts = (bmManifest.content_scripts || []).map((entry) => ({ ...entry, js: (entry.js || []).map((file) => file === "content.js" ? "bm-content.js" : file) }));
+  const contentScripts = [...bmContentScripts, ...(wtpManifest.content_scripts || [])];
   const resources = [...(wtpManifest.web_accessible_resources || []), ...(bmManifest.web_accessible_resources || [])];
   const manifest = {
     manifest_version: 3, name: "KnightScope", short_name: "KnightScope", version: "1.0.0",
