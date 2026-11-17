@@ -26,17 +26,17 @@
     "default_title": "KnightScope",
     "default_popup": "dashboard.html",
     "default_icon": {
-      "16": "icons/knightscope-mark.png",
-      "32": "icons/knightscope-mark.png",
-      "48": "icons/knightscope-mark.png",
-      "128": "icons/knightscope-mark.png"
+      "16": "icons/knight.png",
+      "32": "icons/knight.png",
+      "48": "icons/knight.png",
+      "128": "icons/knight.png"
     }
   },
   "icons": {
-    "16": "icons/knightscope-mark.png",
-    "32": "icons/knightscope-mark.png",
-    "48": "icons/knightscope-mark.png",
-    "128": "icons/knightscope-mark.png"
+    "16": "icons/knight.png",
+    "32": "icons/knight.png",
+    "48": "icons/knight.png",
+    "128": "icons/knight.png"
   },
   "content_scripts": [
     {
