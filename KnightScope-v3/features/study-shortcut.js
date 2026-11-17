@@ -70,3 +70,4 @@
     }
   }, true);
 })();
+// v3 study shortcut package refresh
