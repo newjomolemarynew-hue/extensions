@@ -140,5 +140,6 @@
     chatInput.value = "";
     chatInput.focus();
   });
-\n  checkGame().catch(() => status("review-status", "Could not check this tab."));
+
+  checkGame().catch(() => status("review-status", "Could not check this tab."));
 })();
