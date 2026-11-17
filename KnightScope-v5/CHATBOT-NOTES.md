@@ -1,1 +1,0 @@
-# KnightScope V5 chatbot\n\nThe Chess chat tab is an offline, rule-based chess helper. It answers common chess rules and study questions without sending messages to a server. It is not a general AI model and does not provide move hints during live games.\n
