@@ -449,7 +449,8 @@
   (async () => {
     const v = await sget(["bmReviewInbox", "bmUser"]);
     const defaultUser = "RhonSubhash";
-    if (v.bmUser) $("user").value = v.bmUser;\n    else { $("user").value = defaultUser; await sset({ bmUser: defaultUser }); }
+    if (v.bmUser) $("user").value = v.bmUser;
+    else { $("user").value = defaultUser; await sset({ bmUser: defaultUser }); }
     const inbox = v.bmReviewInbox;
     if (inbox) {
       if (store) store.remove("bmReviewInbox");
