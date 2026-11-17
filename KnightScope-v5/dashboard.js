@@ -162,8 +162,7 @@
       return "Done — the board appearance is back to its default settings.";
     }
     if (/(open|show).*(studio|customi[sz]ation|appearance settings)/.test(text)) {
-      const response = await sendToChessTab("bm:open-studio");
-      return response?.ok ? "I've asked the Chess.com tab to open Studio." : "Open a Chess.com tab first, then use the Studio button in the Best Move panel to access all appearance controls.";
+      return "Use the Open Studio button in the Best Move panel on Chess.com. Studio has the full set of piece, board, effects and other appearance controls.";
     }
     return null;
   }
