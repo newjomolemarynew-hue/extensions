@@ -15,5 +15,5 @@
   }
   function refresh(){if(!panel)return;const pieces=getPieces();panel.querySelector('#ks-count').textContent=pieces.length;const list=panel.querySelector('#ks-list');list.textContent=pieces.length?pieces.map(p=>`${p.className.replace(/piece|square-/g,'').trim()||'Piece'} · ${p.square}`).join('  |  '):'No board pieces detected yet. Open a game board first.';}
   chrome.runtime.onMessage.addListener(msg=>{if(msg?.type==='KNIGHTSCOPE_TOGGLE')toggle();});
-  const observer=new MutationObserver(()=>{if(panel)refresh();});observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  const observer=new MutationObserver(records=>{if(panel && records.some(r=>r.target.closest?.('chess-board, wc-chess-board') || r.target.matches?.('chess-board, wc-chess-board'))) refresh();});observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
 })();
