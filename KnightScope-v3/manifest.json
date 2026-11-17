@@ -70,7 +70,8 @@
         "features/panel-template.js",
         "features/feedback.js",
         "features/review-prompt.js",
-        "features/whats-new.js"
+        "features/whats-new.js",
+        "features/study-shortcut.js"
       ],
       "run_at": "document_idle"
     },
