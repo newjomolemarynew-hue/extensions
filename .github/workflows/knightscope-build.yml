@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -28,3 +28,18 @@ jobs:
           path: KnightScope/dist/
           if-no-files-found: error
           retention-days: 14
+      - name: Package release ZIP
+        run: |
+          cd KnightScope
+          zip -qr KnightScope-v0.1.0.zip dist
+      - name: Commit release ZIP to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add KnightScope/KnightScope-v0.1.0.zip
+          if git diff --cached --quiet; then
+            echo "Release ZIP is already up to date."
+          else
+            git commit -m "Add KnightScope v0.1.0 release ZIP"
+            git push origin HEAD:knightscope-combined
+          fi
