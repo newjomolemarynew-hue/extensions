@@ -83,12 +83,15 @@ try {
   const bmContentScripts = (bmManifest.content_scripts || []).map((entry) => ({ ...entry, js: (entry.js || []).map((file) => file === "content.js" ? "bm-content.js" : file) }));
   const contentScripts = [...bmContentScripts, ...(wtpManifest.content_scripts || [])];
   const resources = [...(wtpManifest.web_accessible_resources || []), ...(bmManifest.web_accessible_resources || [])];
+  const knightIcons = { "16": "icons/knightscope-mark.png", "32": "icons/knightscope-mark.png", "48": "icons/knightscope-mark.png", "128": "icons/knightscope-mark.png" };
+  mkdirSync(join(output, "icons"), { recursive: true });
+  cpSync(join(here, "assets/knightscope-mark.png"), join(output, "icons/knightscope-mark.png"));
   const manifest = {
     manifest_version: 3, name: "KnightScope", short_name: "KnightScope", version: "1.0.0",
     description: "Chess.com game review, move analysis and best-move tools in one extension.",
     permissions, host_permissions: hostPermissions, background: { service_worker: "background.js" },
-    action: { default_title: "KnightScope", default_popup: "dashboard.html", default_icon: wtpManifest.action?.default_icon || wtpManifest.icons },
-    icons: wtpManifest.icons, content_scripts: contentScripts, web_accessible_resources: resources,
+    action: { default_title: "KnightScope", default_popup: "dashboard.html", default_icon: knightIcons },
+    icons: knightIcons, content_scripts: contentScripts, web_accessible_resources: resources,
     content_security_policy: { extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; img-src 'self' data: https://assets-themes.chess.com https://images.chesscomfiles.com; connect-src 'self' https://api.chess.com https://*.scdn.co https://*.spotifycdn.com https://best-move-style-atlas.lovable.app" },
     homepage_url: "https://github.com/newjomolemarynew-hue/extensions"
   };
