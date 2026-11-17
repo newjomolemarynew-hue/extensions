@@ -2,6 +2,7 @@
 const status=document.getElementById("status");
 const review=document.getElementById("review");
 const analysis=document.getElementById("analysis");
+const customize=document.getElementById("customize");
 let activeTab=null;
 async function getTab(){const [tab]=await chrome.tabs.query({active:true,currentWindow:true});return tab;}
 async function sendReview(type){
@@ -25,6 +26,13 @@ review.addEventListener("click",async()=>{
   status.textContent="Opening your game review…";
   const opened=await sendReview("wtp:open");
   if(opened?.ok)window.close();else{status.textContent=opened?.message||"Could not open the review.";review.disabled=false;}
+});
+customize.addEventListener("click",()=>{
+  customize.disabled=true;status.textContent="Opening Customization Studio…";
+  chrome.runtime.sendMessage({type:"openCustomization"},response=>{
+    if(chrome.runtime.lastError||response?.error){status.textContent=response?.error||chrome.runtime.lastError.message;customize.disabled=false;}
+    else window.close();
+  });
 });
 analysis.addEventListener("click",()=>{
   analysis.disabled=true;status.textContent="Opening analysis board…";
