@@ -34,7 +34,7 @@
     host = document.createElement("div");
     host.id = "knightscope-study-shortcut";
     host.style.cssText = "all:initial;position:fixed;inset:0;z-index:2147483647;pointer-events:none;";
-    const root = host.attachShadow({ mode: "closed" });
+    const root = host.attachShadow({ mode: "open" });
     root.innerHTML = `
       <style>
         *{box-sizing:border-box;font-family:Arial,sans-serif}
