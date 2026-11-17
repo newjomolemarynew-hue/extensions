@@ -22,7 +22,7 @@
       this.w.onmessage = (e) => { if (typeof e.data === "string" && this.cur) this.cur(e.data); };
       this.w.postMessage("uci"); this.w.postMessage("setoption name Hash value 64"); this.w.postMessage("isready");
     }
-    analyze(fen, depth, multipv = 2) {
+    analyze(fen, movetime, multipv = 2) {
       return new Promise((res) => {
         const lines = {};
         this.cur = (l) => {
@@ -33,13 +33,13 @@
           } else if (l.startsWith("bestmove")) { this.cur = null; res(Object.keys(lines).sort((a, b) => a - b).map((k) => lines[k])); }
         };
         if (multipv !== this.mp) { this.w.postMessage("setoption name MultiPV value " + multipv); this.mp = multipv; }
-        this.w.postMessage("position fen " + fen); this.w.postMessage("go depth " + depth);
+        this.w.postMessage("position fen " + fen); this.w.postMessage("go movetime " + movetime);
       });
     }
     stop() { this.w.postMessage("stop"); }
   }
   let eng = null; const cache = new Map();
-  const lineCount = () => 2; // Match the post-game review window: Stockfish 19, two principal lines.
+  const lineCount = () => { const el = document.getElementById("engine"); return el ? Math.max(2, Math.min(4, +el.value || 2)) : 2; };
 
   // ================= Chess.com move sounds =================
   const SOUND_BASE = "https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/";
@@ -73,15 +73,15 @@
 
   // ================= analysis =================
   async function runAnalysis() {
-    const tok = S.token, depth = +$("speed").value, n = S.fens.length;
+    const tok = S.token, mt = +$("speed").value, n = S.fens.length;
     eng = eng || new Engine();
     for (let i = 0; i < n; i++) {
       if (tok !== S.token) return;
-      const fen = S.fens[i], pos = C.fromFen(fen), legal = C.legalMoves(pos), ck = fen + "|" + depth + "|" + lineCount();
+      const fen = S.fens[i], pos = C.fromFen(fen), legal = C.legalMoves(pos), ck = fen + "|" + mt + "|" + lineCount();
       let lines;
       if (!legal.length) lines = [{ move: null, pv: [], cp: C.inCheck(pos) ? null : 0, mate: C.inCheck(pos) ? 0 : null, depth: 0 }];
       else if (cache.has(ck)) lines = cache.get(ck);
-      else { lines = await eng.analyze(fen, depth, lineCount()); if (tok !== S.token) return; cache.set(ck, lines); }
+      else { lines = await eng.analyze(fen, mt, lineCount()); if (tok !== S.token) return; cache.set(ck, lines); }
       S.A[i] = { lines, legalCount: legal.length, terminal: !legal.length, mate: !legal.length && C.inCheck(pos) };
       $("prog").style.width = ((i + 1) / n) * 100 + "%"; setStatus(`Analysing ${i + 1} / ${n}`);
       computeReview(); renderLive(i);
@@ -94,7 +94,7 @@
   // A quick pass can misjudge sharp positions. Re-check the moves that look like mistakes, blunders,
   // brilliancies or great moves with a much longer search, and keep the more reliable result.
   async function refine(tok) {
-    const depth = Math.min(30, +$("speed").value + 4);
+    const mt = Math.min(1600, +$("speed").value * 4);
     const targets = []; S.R.forEach((r, i) => { if (r && (r.loss >= 8 || r.cls === "brilliant" || r.cls === "great")) targets.push(i); });
     const list = targets.slice(0, 16); let n = 0;
     for (const i of list) {
@@ -102,8 +102,8 @@
       setStatus(`Double-checking ${++n} / ${list.length}`); $("prog").style.width = (n / list.length) * 100 + "%";
       for (const j of [i, i + 1]) {
         const A = S.A[j]; if (!A || A.terminal || A.deep) continue;
-        const ck = S.fens[j] + "|" + depth; let lines = cache.get(ck);
-        if (!lines) { lines = await eng.analyze(S.fens[j], depth, 2); if (tok !== S.token) return; cache.set(ck, lines); }
+        const ck = S.fens[j] + "|" + mt; let lines = cache.get(ck);
+        if (!lines) { lines = await eng.analyze(S.fens[j], mt, 2); if (tok !== S.token) return; cache.set(ck, lines); }
         S.A[j] = { ...A, lines, deep: true };
       }
       computeReview(); renderLive(i);
@@ -432,7 +432,7 @@
   $("dlg").addEventListener("close", () => { if ($("dlg").returnValue === "ok" && $("pgn").value.trim()) loadPgn($("pgn").value.trim(), null); });
   { const b = $("btnSound"), sync = () => { b.setAttribute("aria-pressed", String(soundOn)); b.style.opacity = soundOn ? "1" : ".5"; b.querySelector(".wv").style.display = soundOn ? "" : "none"; };
     sync(); b.onclick = () => { soundOn = !soundOn; try { localStorage.setItem("bmSound", soundOn ? "1" : "0"); } catch (_) {} sync(); if (soundOn) beep(); };
-
+    $("engine").addEventListener("change", () => $("speed").dispatchEvent(new Event("change")));
   }
   $("cFirst").onclick = () => go(0); $("cPrev").onclick = () => go(S.cur - 1); $("cNext").onclick = () => go(S.cur + 1); $("cLast").onclick = () => go(S.plies.length);
   $("cFlip").onclick = () => { S.flip = !S.flip; renderBars(); renderBoard(); renderEvalBar(); };
@@ -448,9 +448,7 @@
   // ================= startup: analysis payload from the panel =================
   (async () => {
     const v = await sget(["bmReviewInbox", "bmUser"]);
-    const defaultUser = "RhonSubhash";
     if (v.bmUser) $("user").value = v.bmUser;
-    else { $("user").value = defaultUser; await sset({ bmUser: defaultUser }); }
     const inbox = v.bmReviewInbox;
     if (inbox) {
       if (store) store.remove("bmReviewInbox");
@@ -458,7 +456,7 @@
       else if (inbox.ucis) { const r = C.replayUci(inbox.startFen || C.START, inbox.ucis); if (r.plies.length) setGame(null, inbox.startFen || C.START, r.plies, { White: "White", Black: "Black", Result: "*" }); }
       if (inbox.username && !v.bmUser) $("user").value = inbox.username;
     }
-    if ($("user").value) loadUser($("user").value);
+    if ($("user").value && !inbox) loadUser($("user").value);
     renderBars(); window.__bmAnalysis = { S, loadPgn, go };
   })();
 })();
