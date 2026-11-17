@@ -73,7 +73,7 @@
 
   // ================= analysis =================
   async function runAnalysis() {
-    const tok = S.token, mt = +$("speed").value, n = S.fens.length;
+    const tok = S.token, depth = +$("speed").value, n = S.fens.length;
     eng = eng || new Engine();
     for (let i = 0; i < n; i++) {
       if (tok !== S.token) return;
@@ -448,7 +448,8 @@
   // ================= startup: analysis payload from the panel =================
   (async () => {
     const v = await sget(["bmReviewInbox", "bmUser"]);
-    const defaultUser = "RhonSubhash";\n    if (v.bmUser) $("user").value = v.bmUser;\n    else { $("user").value = defaultUser; await sset({ bmUser: defaultUser }); }
+    const defaultUser = "RhonSubhash";
+    if (v.bmUser) $("user").value = v.bmUser;\n    else { $("user").value = defaultUser; await sset({ bmUser: defaultUser }); }
     const inbox = v.bmReviewInbox;
     if (inbox) {
       if (store) store.remove("bmReviewInbox");
