@@ -62,10 +62,11 @@
 
     
 <section class="view" id="chat-view" hidden>
- <div class="intro"><span class="eyebrow">KNIGHTSCOPE ASSISTANT</span><h1>Ask about chess</h1><p>An offline helper for chess rules, strategy and understanding your finished-game review.</p></div>
- <div class="chat-log" id="chat-log" role="log" aria-live="polite"><div class="chat-message bot">Hi! Ask me about openings, tactics, checkmate, castling, or your game review.</div></div>
- <form class="chat-form" id="chat-form"><input id="chat-input" maxlength="400" autocomplete="off" placeholder="Ask a chess question…" aria-label="Chess question"><button class="chat-send" type="submit" aria-label="Send message">➤</button></form>
- <p class="hint">Offline chess helper · No account or API key needed</p>
+ <div class="intro"><span class="eyebrow">KNIGHTSCOPE ASSISTANT</span><h1>Chess & design assistant</h1><p>Ask about chess, or tell me how you want KnightScope to look. I can apply supported appearance changes instantly.</p></div>
+ <div class="quick-actions" aria-label="Design examples"><button type="button" data-prompt="Change my board to Ocean">Ocean board</button><button type="button" data-prompt="Use a walnut board">Walnut board</button><button type="button" data-prompt="Make the board midnight">Midnight board</button><button type="button" data-prompt="Turn on wood texture">Wood texture</button></div>
+ <div class="chat-log" id="chat-log" role="log" aria-live="polite"><div class="chat-message bot">Hi! I can help with chess questions and change some KnightScope appearance settings. Try “make my board ocean”, “use a marble texture”, or “turn off motion effects”. For advanced controls, I can open Studio.</div></div>
+ <form class="chat-form" id="chat-form"><input id="chat-input" maxlength="400" autocomplete="off" placeholder="Tell me what to change…" aria-label="Message the KnightScope assistant"><button class="chat-send" type="submit" aria-label="Send message">➤</button></form>
+ <p class="hint" id="chat-status">Local assistant · Appearance changes save to KnightScope settings</p>
 </section>
 <footer>
       <span class="footer-mark">♞</span>
