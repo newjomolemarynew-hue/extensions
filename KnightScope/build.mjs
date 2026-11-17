@@ -63,16 +63,45 @@ try {
   cpSync(join(bestMoveSource, "engine"), join(output, "bm-engine"), { recursive: true });
   cpSync(bestMoveStage, output, { recursive: true });
 
-  // Both systems share Chrome's single offscreen-document slot. Run both engine
-  // listeners in one page, and keep Best Move's Stockfish in its own directory.
+  // Both systems share Chrome's single offscreen-document slot. Keep heavy
+  // engines dormant until a user actually requests analysis, then unload them
+  // after inactivity so the extension does not retain WASM/model memory forever.
   const engineHtml = join(output, "engine.html");
   let enginePage = readFileSync(engineHtml, "utf8");
   enginePage = enginePage.replace("</body>", '  <script src="offscreen.js"></script>\n</body>');
   writeFileSync(engineHtml, enginePage);
   const bmOffscreen = join(output, "offscreen.js");
   replaceOnce(bmOffscreen, 'new Worker("engine/stockfish.js")', 'new Worker("bm-engine/stockfish.js")', "Best Move engine path");
+  replaceOnce(bmOffscreen, 'let worker = null, engineError = null;\nlet maiaWorker = null;',
+    'let worker = null, engineError = null;\nlet maiaWorker = null;\nlet engineIdleTimer = null, maiaIdleTimer = null;\nconst ENGINE_IDLE_MS = 90_000, MAIA_IDLE_MS = 120_000;',
+    "lazy engine lifecycle state");
+  replaceOnce(bmOffscreen, 'function boot() {\n  lastBoot = Date.now(); engineError = null;',
+    'function boot() {\n  clearTimeout(engineIdleTimer);\n  lastBoot = Date.now(); engineError = null;',
+    "cancel engine idle shutdown on boot");
+  replaceOnce(bmOffscreen, 'function start(req) {\n  current = req; busy = true; lines = {};',
+    'function start(req) {\n  clearTimeout(engineIdleTimer);\n  current = req; busy = true; lines = {};',
+    "keep engine alive while analysing");
+  replaceOnce(bmOffscreen, '  if (q) { if (!busy) start(q); else q.respond({ error: "superseded" }); }   // never send commands while the engine is searching',
+    '  if (q) { if (!busy) start(q); else q.respond({ error: "superseded" }); }   // never send commands while the engine is searching\n  if (!busy && worker) engineIdleTimer = setTimeout(() => { if (!busy && worker) { try { worker.terminate(); } catch (_) {} worker = null; curMultiPV = 0; curElo = -1; } }, ENGINE_IDLE_MS);',
+    "release Stockfish after idle");
+  replaceOnce(bmOffscreen, '  if (msg.type === "maia-analyze") {\n    const requestId = ++maiaRequestId;',
+    '  if (msg.type === "maia-analyze") {\n    clearTimeout(maiaIdleTimer);\n    const requestId = ++maiaRequestId;',
+    "keep Maia alive during request");
+  replaceOnce(bmOffscreen, '    respond(data.type === "MAIA_ERROR" ? { error: data.error } : data);',
+    '    respond(data.type === "MAIA_ERROR" ? { error: data.error } : data);\n    if (maiaResponses.size === 0 && maiaWorker) maiaIdleTimer = setTimeout(() => { if (maiaResponses.size === 0 && maiaWorker) { maiaWorker.terminate(); maiaWorker = null; } }, MAIA_IDLE_MS);',
+    "release Maia models after idle");
+  replaceOnce(bmOffscreen, '  if (msg.type !== "analyze") return;\n  if (engineError)',
+    '  if (msg.type !== "analyze") return;\n  clearTimeout(engineIdleTimer);\n  if (!worker && !engineError) boot();\n  if (engineError)',
+    "start Stockfish only on demand");
+  replaceOnce(bmOffscreen, '\nboot();\n',
+    '\n// Stockfish starts lazily when the first analysis request arrives.\n',
+    "remove eager Stockfish startup");
   const bmBackground = readFileSync(join(bestMoveSource, "background.js"), "utf8")
-    .replaceAll('"offscreen.html"', '"engine.html"');
+    .replaceAll('"offscreen.html"', '"engine.html"')
+    .replace('chrome.runtime.onStartup.addListener(() => { ensureOffscreen().catch(() => {}); flushSuggestions(); });',
+      'chrome.runtime.onStartup.addListener(() => { flushSuggestions(); });')
+    .replace('chrome.runtime.onInstalled.addListener(() => ensureOffscreen().catch(() => {}));',
+      '// Heavy offscreen engines are created only when a feature requests analysis.');
 
   const wtpBackground = readFileSync(join(wtpDist, "background.js"), "utf8");
   writeFileSync(join(output, "background.js"), wtpBackground + "\n;\n" + bmBackground + "\n");
