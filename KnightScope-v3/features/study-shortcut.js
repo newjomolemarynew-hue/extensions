@@ -18,20 +18,16 @@
       }
     });
   }
-  async function reviewFinishedGame() {
+  function openAnalysis() {
     const status = host.shadowRoot.querySelector("[data-status]");
-    status.textContent = "Looking for a finished game…";
-    try {
-      const found = await chrome.runtime.sendMessage({ type: "wtp:find" });
-      if (!found?.ok) {
-        status.textContent = found?.message || "Open a finished Chess.com game first.";
-        return;
+    status.textContent = "Opening analysis board…";
+    chrome.runtime.sendMessage({ type: "openAnalysis" }, (response) => {
+      if (chrome.runtime.lastError || response?.error) {
+        status.textContent = response?.error || chrome.runtime.lastError.message;
+      } else {
+        status.textContent = "Analysis board opened.";
       }
-      const opened = await chrome.runtime.sendMessage({ type: "wtp:open" });
-      status.textContent = opened?.ok ? "Opening game review…" : (opened?.message || "Could not open the review.");
-    } catch (_) {
-      status.textContent = "Refresh this Chess.com tab and try again.";
-    }
+    });
   }
   function build() {
     if (host) return;
@@ -56,12 +52,12 @@
         <header><h2>KnightScope</h2><button class="close" type="button" aria-label="Close">×</button></header>
         <p class="hint">Study tools · Alt+B to close</p>
         <button class="primary" type="button" data-customize>Customize board &amp; pieces</button>
-        <button type="button" data-review>Review finished game</button>
+        <button type="button" data-review>Open analysis board</button>
         <p data-status aria-live="polite">Choose a study tool.</p>
       </section>`;
     root.querySelector(".close").addEventListener("click", close);
     root.querySelector("[data-customize]").addEventListener("click", openStudio);
-    root.querySelector("[data-review]").addEventListener("click", reviewFinishedGame);
+    root.querySelector("[data-review]").addEventListener("click", openAnalysis);
     document.documentElement.appendChild(host);
   }
   function close() { host?.remove(); host = null; }
