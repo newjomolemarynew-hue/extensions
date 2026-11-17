@@ -108,6 +108,7 @@
 
 
   const chatForm = $("chat-form"), chatInput = $("chat-input"), chatLog = $("chat-log");
+  const chatStatus = $("chat-status");
   function addChat(text, who) {
     const item = document.createElement("div");
     item.className = "chat-message " + who;
@@ -115,31 +116,94 @@
     chatLog.append(item);
     chatLog.scrollTop = chatLog.scrollHeight;
   }
+  const boardLooks = {
+    classic: { boardStyle: "classic" }, walnut: { boardStyle: "walnut" },
+    ice: { boardStyle: "ice" }, slate: { boardStyle: "slate" },
+    midnight: { boardStyle: "midnight" }, rose: { boardStyle: "rose" },
+    ocean: { boardStyle: "ocean" }, violet: { boardStyle: "violet" },
+    sunset: { boardStyle: "sunset" }, mono: { boardStyle: "mono" },
+    ember: { boardStyle: "ember" }, chesscom: { boardStyle: "default" }
+  };
+  const textures = ["wood", "marble", "stone", "linen", "brushed"];
+  async function patchLook(patch) {
+    const current = await chrome.storage.local.get("bmCustomization");
+    const settings = { ...(current.bmCustomization || {}), ...patch };
+    await chrome.storage.local.set({ bmCustomization: settings });
+  }
+  async function designCommand(q) {
+    const text = q.toLowerCase();
+    const look = Object.keys(boardLooks).find(name =>
+      new RegExp("\\b" + name + "\\b").test(text) &&
+      /(board|square|theme|look|colour|color|change|make|use|switch|set)/.test(text)
+    );
+    if (look) {
+      await patchLook(boardLooks[look]);
+      return "Done — I changed your board to " + look + ". The setting is saved in KnightScope and should update on supported Chess.com views.";
+    }
+    const texture = textures.find(name => text.includes(name));
+    if (texture && /(texture|grain|surface|board|use|turn|enable|change)/.test(text)) {
+      await patchLook({ boardTexture: texture });
+      return "Done — the " + texture + " board texture is now selected.";
+    }
+    if (/(remove|disable|turn off|no) .*(texture|grain)/.test(text) || /texture off/.test(text)) {
+      await patchLook({ boardTexture: "none" });
+      return "Done — board texture is off.";
+    }
+    if (/(reduce motion|less motion|turn off motion|disable animation|no animation)/.test(text)) {
+      await patchLook({ reducedMotion: true, boardAnim: "none" });
+      return "Done — motion effects are reduced and board animation is off.";
+    }
+    if (/(restore motion|enable animation|turn on motion)/.test(text)) {
+      await patchLook({ reducedMotion: false });
+      return "Done — reduced motion is off. You can choose a board animation in Studio.";
+    }
+    if (/(reset|default) (the )?(board|board look|appearance)/.test(text)) {
+      await patchLook({ boardStyle: "default", boardTexture: "none", boardAnim: "none", reducedMotion: false });
+      return "Done — the board appearance is back to its default settings.";
+    }
+    if (/(open|show).*(studio|customi[sz]ation|appearance settings)/.test(text)) {
+      const response = await sendToChessTab("bm:open-studio");
+      return response?.ok ? "I've asked the Chess.com tab to open Studio." : "Open a Chess.com tab first, then use the Studio button in the Best Move panel to access all appearance controls.";
+    }
+    return null;
+  }
   function chessAnswer(raw) {
     const q = raw.toLowerCase();
-    if (q.includes("castl")) return "Castling is a special king move. The king moves two squares toward a rook, and that rook moves next to the king. You can only castle if neither piece has moved, the path is clear, the king is not in check, and it does not cross an attacked square.";
-    if (q.includes("en passant")) return "En passant is a special pawn capture. If an enemy pawn moves two squares from its starting square and lands beside your pawn, you may capture it as though it moved one square. You must do this immediately on your next move.";
+    if (q.includes("castl")) return "Castling moves your king two squares toward a rook, then places the rook beside it. You can only castle if the king and rook have not moved, the path is clear, and the king is not in check or crossing an attacked square.";
+    if (q.includes("en passant")) return "En passant is a special pawn capture. If an enemy pawn advances two squares and lands beside yours, you may capture it as if it had moved one square. You must do it immediately on your next move.";
     if (q.includes("checkmate") || q.includes("mate")) return "Checkmate means the king is in check and there is no legal move to escape. The game ends immediately.";
     if (q.includes("stalemate") || q.includes("draw")) return "Stalemate is a draw: the player to move is not in check but has no legal moves. Other draws include agreement, repetition and the fifty-move rule.";
     if (q.includes("fork")) return "A fork is a double attack: one piece attacks two or more enemy pieces at once. Knights are especially good at forks.";
     if (q.includes("pin")) return "A pin happens when moving a piece would expose a more valuable piece behind it, often the king. A piece pinned to its king cannot legally move if that exposes check.";
     if (q.includes("skewer")) return "A skewer attacks a valuable piece first. When it moves, a less valuable piece behind it can be won.";
-    if (q.includes("opening")) return "A good opening usually follows three ideas: control the centre, develop your knights and bishops, and get your king safe by castling.";
-    if (q.includes("stockfish") || q.includes("engine")) return "Stockfish is a chess engine that calculates strong candidate moves. Use the analysis board after a game or in a practice position to compare lines.";
-    if (q.includes("accuracy") || q.includes("mistake") || q.includes("blunder") || q.includes("review")) return "The game review compares moves played with engine analysis and groups them into categories. Select a move in the review to inspect the position and compare alternatives.";
-    if (q.includes("maia")) return "Maia is a chess model trained to predict human-like moves at different playing strengths. The Maia model files are included, but that does not prove every level is connected to the interface.";
-    if (q.includes("hello") || q === "hi" || q.includes("hey")) return "Hello! Ask me about chess rules, tactics, openings, engines or how to read a game review.";
-    return "I can help with castling, en passant, forks, pins, skewers, openings, checkmate, draws, Stockfish and reading your completed-game review. Try one of those topics.";
+    if (q.includes("opening")) return "A useful opening plan is to fight for the centre, develop your knights and bishops, and get your king safe. You don't need to memorise dozens of moves to understand those ideas.";
+    if (q.includes("stockfish") || q.includes("engine")) return "Stockfish is a chess engine that evaluates positions and suggests candidate moves. Use the analysis board to compare lines and understand why a move works.";
+    if (q.includes("accuracy") || q.includes("mistake") || q.includes("blunder") || q.includes("review")) return "A game review compares your moves with engine analysis and labels important differences. Select a move to inspect the position and compare alternatives.";
+    if (q.includes("maia")) return "Maia is designed to predict human-like chess moves at different playing strengths. KnightScope includes Maia-related files and controls.";
+    if (/^(hi|hello|hey)\\b/.test(q)) return "Hey! What would you like to work on — a chess concept, your game review, or the way KnightScope looks?";
+    if (/(what can you|help me|commands|what do you do)/.test(q)) return "I can explain common chess rules and tactics, and change board presets (Ocean, Walnut, Midnight, Classic, Ice, Slate, Rose, Violet, Sunset, Mono or Ember), board textures, and motion settings. Say what you want in normal words. For piece designs and more detailed panel controls, open Studio.";
+    return "I don't know that one yet. I can explain chess rules and tactics, or make supported appearance changes. Tell me the change you want in a simple sentence, such as “make my board ocean” or “turn off motion effects”.";
+  }
+  async function handleChat(raw) {
+    const message = raw.trim();
+    if (!message) return;
+    addChat(message, "user");
+    chatInput.value = "";
+    try {
+      const changed = await designCommand(message);
+      addChat(changed || chessAnswer(message), "bot");
+      chatStatus.textContent = "Settings are saved locally on this device.";
+    } catch (error) {
+      addChat("I couldn't save that appearance change. Please try again, or open Studio and change it there.", "bot");
+      chatStatus.textContent = "Could not update settings.";
+    }
+    chatInput.focus();
   }
   chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const message = chatInput.value.trim();
-    if (!message) return;
-    addChat(message, "user");
-    addChat(chessAnswer(message), "bot");
-    chatInput.value = "";
-    chatInput.focus();
+    handleChat(chatInput.value);
   });
+  document.querySelectorAll("[data-prompt]").forEach(button => button.addEventListener("click", () => handleChat(button.dataset.prompt)));
 
   checkGame().catch(() => status("review-status", "Could not check this tab."));
 })();
