@@ -21,25 +21,27 @@ jobs:
           node-version: 22
       - name: Build merged extension
         run: node KnightScope/build.mjs
-      - name: Upload installable extension folder
+      - name: Prepare clean KnightScope package
+        run: |
+          mkdir -p KnightScope/package/KnightScope
+          cp -a KnightScope/dist/. KnightScope/package/KnightScope/
+          cd KnightScope/package
+          zip -qr ../KnightScope-v0.1.1.zip KnightScope
+      - name: Upload installable KnightScope folder
         uses: actions/upload-artifact@v4
         with:
-          name: KnightScope-test-build
-          path: KnightScope/dist/
+          name: KnightScope-v0.1.1
+          path: KnightScope/package/KnightScope/
           if-no-files-found: error
           retention-days: 14
-      - name: Package release ZIP
-        run: |
-          cd KnightScope
-          zip -qr KnightScope-v0.1.0.zip dist
       - name: Commit release ZIP to branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add KnightScope/KnightScope-v0.1.0.zip
+          git add KnightScope/KnightScope-v0.1.1.zip
           if git diff --cached --quiet; then
             echo "Release ZIP is already up to date."
           else
-            git commit -m "Add KnightScope v0.1.0 release ZIP"
+            git commit -m "Package KnightScope v0.1.1 without nested dist folder"
             git push origin HEAD:knightscope-combined
           fi
