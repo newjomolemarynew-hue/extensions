@@ -39,7 +39,7 @@
     stop() { this.w.postMessage("stop"); }
   }
   let eng = null; const cache = new Map();
-  const ENGINE_META = { stockfish:{label:"Stockfish 19",bundled:true}, maia:{label:"Maia",bundled:true}, torch:{label:"Torch",bundled:false}, lc0:{label:"Leela Chess Zero",bundled:false}, plentychess:{label:"PlentyChess",bundled:false}, berserk:{label:"Berserk",bundled:false}, reckless:{label:"Reckless",bundled:false}, koivisto:{label:"Koivisto",bundled:false}, ethereal:{label:"Ethereal",bundled:false}, caissa:{label:"Caissa",bundled:false}, viridithas:{label:"Viridithas",bundled:false}, stormphrax:{label:"Stormphrax",bundled:false} };
+  const ENGINE_META = { stockfish:{label:"Stockfish 19",bundled:true}, maia:{label:"Maia",bundled:false}, torch:{label:"Torch",bundled:false}, lc0:{label:"Leela Chess Zero",bundled:false}, plentychess:{label:"PlentyChess",bundled:false}, berserk:{label:"Berserk",bundled:false}, reckless:{label:"Reckless",bundled:false}, koivisto:{label:"Koivisto",bundled:false}, ethereal:{label:"Ethereal",bundled:false}, caissa:{label:"Caissa",bundled:false}, viridithas:{label:"Viridithas",bundled:false}, stormphrax:{label:"Stormphrax",bundled:false} };
   const lineCount = () => 2;
 
   // ================= Chess.com move sounds =================
