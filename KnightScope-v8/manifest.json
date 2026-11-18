@@ -64,6 +64,7 @@
         "features/fx-live.js",
         "features/spotify-widget.js",
         "features/board-state.js",
+        "features/auto-play.js",
         "features/game-mode.js",
         "features/player-ratings.js",
         "features/opponent-auto-config.js",
