@@ -161,7 +161,9 @@
     custom = Cz.normalize(custom);
     const localPieces = custom.pieceSource === "local" || custom.pieceSource === "theme";
     const boardLight = custom.squareColors.light, boardDark = custom.squareColors.dark;
-    const key = [fen, flip, S.cur, rv && rv.cls, JSON.stringify(custom), Object.keys(chessPieceTheme).length].join("|");
+    const currentBest = S.A[S.cur]?.lines?.[0]?.move || "";
+    const currentDepth = S.A[S.cur]?.lines?.[0]?.depth || 0;
+    const key = [fen, flip, S.cur, rv && rv.cls, currentBest, currentDepth, JSON.stringify(custom), Object.keys(chessPieceTheme).length].join("|");
     if (key === lastBoardKey) return; lastBoardKey = key;
     const xy = (i) => [(flip ? 7 - (i & 7) : i & 7) * 100, (flip ? i >> 3 : 7 - (i >> 3)) * 100];
     let s = `<svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">`;
@@ -176,13 +178,6 @@
       if (bottom) s += `<text x="${x + 88}" y="${y + 94}" font-size="17" font-weight="700" text-anchor="end" fill="${col}">${"abcdefgh"[i & 7]}</text>`;
       if (left) s += `<text x="${x + 6}" y="${y + 20}" font-size="17" font-weight="700" fill="${col}">${(i >> 3) + 1}</text>`;
     }
-    // best-move arrow for non-best moves
-    if (rv && ["inaccuracy", "mistake", "miss", "blunder"].includes(rv.cls) && rv.bestUci) {
-      const a = C.sqIdx(rv.bestUci.slice(0, 2)), b2 = C.sqIdx(rv.bestUci.slice(2, 4)), [x1, y1] = xy(a), [x2, y2] = xy(b2);
-      const cx1 = x1 + 50, cy1 = y1 + 50, cx2 = x2 + 50, cy2 = y2 + 50, dx = cx2 - cx1, dy = cy2 - cy1, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy, py = ux;
-      const bx = cx2 - ux * 30, by = cy2 - uy * 30;
-      s += `<g opacity=".92"><line x1="${cx1 + ux * 14}" y1="${cy1 + uy * 14}" x2="${bx}" y2="${by}" stroke="#81b64c" stroke-width="16" stroke-linecap="round"/><polygon points="${cx2 - ux * 4},${cy2 - uy * 4} ${bx + px * 26},${by + py * 26} ${bx - px * 26},${by - py * 26}" fill="#81b64c"/></g>`;
-    }
     for (let i = 0; i < 64; i++) {
       const c = p.b[i]; if (!c) continue; const [x, y] = xy(i), white = C.isW(c);
       const code = `${white ? "w" : "b"}${c.toLowerCase()}`;
@@ -195,6 +190,18 @@
         } else {
           s += `<foreignObject x="${x + 7}" y="${y + 7}" width="86" height="86"><div xmlns="http://www.w3.org/1999/xhtml" class="bm-review-piece bm-chesscom-piece ${code}" role="img" aria-label="${white ? "White" : "Black"} ${C.pieceName(c)}"><img src="${chessComPieceUrl(code)}" alt=""><span aria-hidden="true">${PIECE_GLYPHS[c]}</span></div></foreignObject>`;
         }
+      }
+    }
+    // Always show Stockfish 19's top move for the position currently on the board.
+    if (currentBest && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(currentBest)) {
+      const from = C.sqIdx(currentBest.slice(0, 2)), to = C.sqIdx(currentBest.slice(2, 4));
+      if (from >= 0 && to >= 0 && from !== to) {
+        const [x1, y1] = xy(from), [x2, y2] = xy(to);
+        const cx1 = x1 + 50, cy1 = y1 + 50, cx2 = x2 + 50, cy2 = y2 + 50;
+        const dx = cx2 - cx1, dy = cy2 - cy1, L = Math.hypot(dx, dy) || 1;
+        const ux = dx / L, uy = dy / L, px = -uy, py = ux;
+        const bx = cx2 - ux * 30, by = cy2 - uy * 30;
+        s += `<g class="bm-best-move-arrow" opacity=".96" pointer-events="none"><line x1="${cx1 + ux * 14}" y1="${cy1 + uy * 14}" x2="${bx}" y2="${by}" stroke="#35d07f" stroke-width="13" stroke-linecap="round"/><polygon points="${cx2 - ux * 4},${cy2 - uy * 4} ${bx + px * 25},${by + py * 25} ${bx - px * 25},${by - py * 25}" fill="#35d07f" stroke="#123c2a" stroke-width="2"/></g>`;
       }
     }
     if (last && rv) { const [x, y] = xy(last.move.to); s += B.badge(rv.cls, 38).replace("<svg ", `<svg x="${x + 60}" y="${y - 6}" `); }
@@ -330,9 +337,14 @@
 
   function renderDetail() {
     if (!S.plies.length) return;
+    const currentBest = S.A[S.cur]?.lines?.[0];
+    const bestSan = currentBest?.move ? B.sanOf(S.fens[S.cur], currentBest.move) : "";
+    const bestMoveInfo = bestSan
+      ? `<div class="ln bm-best-move-info">Stockfish 19 best move here: <b>${esc(bestSan)}</b><span class="muted"> · depth ${currentBest.depth || "—"}</span></div>`
+      : `<div class="ln bm-best-move-info">Stockfish 19 best move: <b>Analysing…</b></div>`;
     if (S.cur === 0) {
       const h = S.headers, eco = (h.ECOUrl || "").split("/openings/")[1], open = eco ? eco.split("-").filter((w, i, a) => !/^\d/.test(w) && !a.slice(0, i).some((x) => /^\d/.test(x))).join(" ") : (h.Opening || "");
-      $("detail").innerHTML = `<div class="h">${esc(h.White || "White")} vs ${esc(h.Black || "Black")}</div><div class="sub">${esc(h.Result || "")}${h.Termination ? " · " + esc(h.Termination) : ""}</div>${open ? `<p>Opening: <b>${esc(open)}</b></p>` : ""}<p class="muted">Use ← → to step through the game. Click the chart or a move to jump.</p>`;
+      $("detail").innerHTML = `<div class="h">${esc(h.White || "White")} vs ${esc(h.Black || "Black")}</div><div class="sub">${esc(h.Result || "")}${h.Termination ? " · " + esc(h.Termination) : ""}</div>${bestMoveInfo}${open ? `<p>Opening: <b>${esc(open)}</b></p>` : ""}<p class="muted">Use ← → to step through the game. Click the chart or a move to jump.</p>`;
       return;
     }
     const i = S.cur - 1, p = S.plies[i], r = S.R[i];
@@ -341,7 +353,7 @@
     const evAfter = A1.terminal ? (A1.mate ? "#" : "=") : fmtW(score(A1.lines[0]), turnAfter);
     const title = r.cls === "best" ? `${p.san} is the best move` : r.cls === "forced" ? `${p.san} is forced` : `${p.san} is ${/^[aeiou]/i.test(meta.label) ? "an" : "a"} ${meta.label.toLowerCase()}`;
     const A0 = S.A[i], bl = A0.lines[0], line = bl.move && r.cls !== "best" && r.cls !== "forced" && r.cls !== "brilliant" && r.cls !== "great" ? B.fmtLine(S.fens[i], bl.pv, 6) : "";
-    $("detail").innerHTML = `<div class="h">${B.badge(r.cls, 26)}<span style="color:${meta.color}">${esc(title)}</span></div><div class="sub">Evaluation ${esc(evAfter)} · accuracy ${r.acc.toFixed(0)}%</div><p>${esc(reasonText(i))}</p>${line ? `<div class="ln">Engine line: <b>${esc(line)}</b></div>` : ""}`;
+    $("detail").innerHTML = `<div class="h">${B.badge(r.cls, 26)}<span style="color:${meta.color}">${esc(title)}</span></div><div class="sub">Evaluation ${esc(evAfter)} · accuracy ${r.acc.toFixed(0)}%</div>${bestMoveInfo}<p>${esc(reasonText(i))}</p>${line ? `<div class="ln">Engine line: <b>${esc(line)}</b></div>` : ""}`;
   }
 
   function renderLiveNow() { renderBars(); renderSummary(); renderChart(); renderMoves(); renderBoard(); renderEvalBar(); renderDetail(); }
