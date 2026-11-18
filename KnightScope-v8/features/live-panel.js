@@ -873,7 +873,7 @@ self.BMLivePanel = () => {
     render();
   }
 
-  on(window, "keydown", (e) => {
+  on(document, "keydown", (e) => {
     if (!e.altKey) return;
     const k = e.key.toLowerCase();
     if (k === "b") {
@@ -885,7 +885,7 @@ self.BMLivePanel = () => {
     if (k === "m") save({ collapsed: !S.collapsed });
     if (k === "a") peekHeld = true;
   });
-  on(window, "keyup", (e) => { if (e.key.toLowerCase() === "a" || e.key === "Alt") peekHeld = false; });
+  on(document, "keyup", (e) => { if (e.key.toLowerCase() === "a" || e.key === "Alt") peekHeld = false; });
 
   window.__bm = { destroy() {
     timers.forEach(clearInterval); cleanups.forEach((f) => f());
