@@ -97,7 +97,7 @@
           <div class="row controlRow" id="oppModeRow"><div>Opponent rating <small id="oppDet">Checking…</small></div><div class="seg" data-key="oppMode"><i class="th"></i><button data-v="auto">Auto</button><button data-v="manual">Manual</button></div></div>
           <div class="sl" id="oppRatingControl"><div class="t"><span>Set opponent rating</span><em id="oppL"></em></div><input type="range" id="oppE" min="100" max="3000" step="25"></div>
           <div class="sl"><div class="t"><span>Engine strength</span><em id="eloL"></em></div><input type="range" id="elo" min="1320" max="3200" step="10"></div>
-          <div class="row controlRow"><div>Thinking time</div><div class="seg" data-key="speed"><i class="th"></i><button data-v="turbo">Fast</button><button data-v="auto">Auto</button><button data-v="deep">Deep</button></div></div>
+          <div class="row controlRow"><div>Engine</div><div class="seg" data-key="engine"><i class="th"></i><button data-v="stockfish">Stockfish 19</button><button data-v="torch">Torch</button><button data-v="lc0">Leela Chess Zero</button><button data-v="maia">Maia</button></div></div><div class="row controlRow"><div>Thinking time</div><div class="seg" data-key="speed"><i class="th"></i><button data-v="turbo">Fast</button><button data-v="auto">Auto</button><button data-v="deep">Deep</button></div></div>
           <div class="row controlRow"><div>Alternative moves</div><div class="seg" data-key="lines"><i class="th"></i><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
         </div>
       </details>
