@@ -1,0 +1,123 @@
+{
+  "manifest_version": 3,
+  "name": "KnightScope",
+  "short_name": "KnightScope",
+  "version": "8.0.0",
+  "description": "KnightScope V8 — unified analysis, game review, Best Move controls, and engine selection.",
+  "permissions": [
+    "offscreen",
+    "activeTab",
+    "scripting",
+    "storage",
+    "windows"
+  ],
+  "host_permissions": [
+    "https://www.chess.com/*",
+    "https://api.chess.com/*",
+    "https://open.spotify.com/*",
+    "https://*.scdn.co/*",
+    "https://*.spotifycdn.com/*",
+    "https://best-move-style-atlas.lovable.app/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "KnightScope",
+    "default_popup": "dashboard.html",
+    "default_icon": {
+      "16": "icons/knight.png",
+      "32": "icons/knight.png",
+      "48": "icons/knight.png",
+      "128": "icons/knight.png"
+    }
+  },
+  "icons": {
+    "16": "icons/knight.png",
+    "32": "icons/knight.png",
+    "48": "icons/knight.png",
+    "128": "icons/knight.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.chess.com/*"
+      ],
+      "js": [
+        "page.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.chess.com/*"
+      ],
+      "js": [
+        "chess.js",
+        "brain.js",
+        "liquid.js",
+        "customization/pieces.js",
+        "customization/fx.js",
+        "customization/board-fx.js",
+        "customization/customization.js",
+        "features/fx-live.js",
+        "features/spotify-widget.js",
+        "features/board-state.js",
+        "features/game-mode.js",
+        "features/player-ratings.js",
+        "features/opponent-auto-config.js",
+        "features/engine-client.js",
+        "features/arrow-renderer.js",
+        "features/panel-template.js",
+        "features/feedback.js",
+        "features/review-prompt.js",
+        "features/whats-new.js",
+        "features/live-panel.js",
+        "bm-content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://open.spotify.com/*"
+      ],
+      "js": [
+        "features/spotify.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.chess.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "panel.html"
+      ],
+      "matches": [
+        "https://www.chess.com/*"
+      ]
+    },
+    {
+      "resources": [
+        "features/bot-ratings.json",
+        "features/panel.css"
+      ],
+      "matches": [
+        "https://www.chess.com/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; img-src 'self' data: https://assets-themes.chess.com https://images.chesscomfiles.com; connect-src 'self' https://api.chess.com https://*.scdn.co https://*.spotifycdn.com https://best-move-style-atlas.lovable.app"
+  },
+  "homepage_url": "https://github.com/newjomolemarynew-hue/extensions"
+}

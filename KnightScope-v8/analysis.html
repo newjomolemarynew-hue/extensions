@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KnightScope V8 · Unified Analysis</title>
+<link rel="stylesheet" href="liquid.css"><link rel="stylesheet" href="analysis.css"></head>
+<body>
+<div class="ambient"></div>
+
+<header class="top glass" data-lens data-rim="16" data-scale="14">
+  <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5M8 11h5.5"/></svg></div><h1>Analysis</h1></div>
+  <div class="grow"></div>
+  <label class="sel"><span>Engine</span><span class="engine-name"><select id="engineSelect" title="Choose analysis engine"><option value="stockfish">Stockfish 19</option><option value="maia">Maia</option><option value="torch">Torch</option><option value="lc0">Leela Chess Zero</option><option value="plentychess">PlentyChess</option><option value="berserk">Berserk</option><option value="reckless">Reckless</option><option value="koivisto">Koivisto</option><option value="ethereal">Ethereal</option><option value="caissa">Caissa</option><option value="viridithas">Viridithas</option><option value="stormphrax">Stormphrax</option></select></span></label>
+  <label class="sel"><span>Review</span><select id="speed"><option value="12">Fast · Depth 12</option><option value="14" selected>Standard · Depth 14</option><option value="18">Thorough · Depth 18</option></select></label>
+  <button class="ib" id="btnSound" type="button" title="Move sounds" aria-pressed="true"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.2h2.4L8 3.6v8.8L4.9 9.8H2.5z"/><path class="wv" d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8M12.4 3.8a6 6 0 0 1 0 8.4"/></svg></button>
+  <button class="btn ghost" id="btnCustomize" type="button" title="Open Studio"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6"/><circle cx="10" cy="4.5" r="1.6"/><circle cx="6" cy="11.5" r="1.6"/></svg><span class="lbl">Studio</span></button>
+  <button class="btn primary" id="btnPaste"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3" width="9" height="11" rx="2"/><path d="M6 3V2.4c0-.5.4-.9.9-.9h2.2c.5 0 .9.4.9.9V3M6 8h4M6 10.5h2.6"/></svg>Paste PGN</button>
+  <button class="btn ghost" id="btnLive" hidden><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2" fill="currentColor"/><path d="M3.6 3.6a6.2 6.2 0 0 0 0 8.8M12.4 3.6a6.2 6.2 0 0 1 0 8.8"/></svg>Current game</button>
+</header>
+<div class="progress"><i id="prog"></i></div>
+
+<main>
+  <aside class="side card" data-lens data-rim="18" data-scale="16">
+    <div class="cap">Games</div>
+    <form id="uform"><input id="user" autocomplete="off" spellcheck="false" placeholder="Chess.com username"><button class="btn primary" type="submit">Load</button></form>
+    <div class="seg" id="filter" style="--n:5;--i:0"><i class="th"></i><button data-f="all" class="on">All</button><button data-f="bullet">Bullet</button><button data-f="blitz">Blitz</button><button data-f="rapid">Rapid</button><button data-f="daily">Daily</button></div>
+    <div id="gstatus" class="muted small"></div>
+    <div id="glist" class="glist"></div>
+    <button class="btn ghost wide" id="more" hidden>Load earlier games</button>
+    <p class="muted small note">Games against computer bots aren’t in chess.com’s public data. Copy the PGN from the game and use <b>Paste PGN</b>.</p>
+  </aside>
+
+  <section class="center">
+    <div class="stage card">
+      <div class="pbar" id="topBar" aria-label="Opponent"></div>
+      <div class="boardwrap"><div class="evbar" id="evbar"><i id="evfill"></i><span id="evtxt">0.0</span></div><div class="bsq"><div id="board"></div></div></div>
+      <div class="pbar" id="botBar" aria-label="You"></div>
+      <div class="ctrls">
+        <span class="status muted small" id="status"></span>
+        <span class="sp"></span>
+        <div class="nav">
+          <button class="ib" id="cFirst" title="Start (Home)"><svg viewBox="0 0 16 16"><path d="M4 3v10M13 3 6.5 8 13 13z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+          <button class="ib" id="cPrev" title="Previous (←)"><svg viewBox="0 0 16 16"><path d="M11 3 5 8l6 5z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+          <button class="ib" id="cNext" title="Next (→)"><svg viewBox="0 0 16 16"><path d="m5 3 6 5-6 5z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+          <button class="ib" id="cLast" title="End"><svg viewBox="0 0 16 16"><path d="M12 3v10M3 3l6.5 5L3 13z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+        </div>
+        <span class="sp"></span>
+        <button class="btn ghost" id="cFlip" title="Flip board (F)"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6V3.5M4 3.5 2 5.5M4 3.5l2 2M12 10v2.5M12 12.5l-2-2M12 12.5l2-2M4 8.5c0 2 1.5 3 4 3M12 7.5c0-2-1.5-3-4-3"/></svg>Flip</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="right">
+    <div class="card review" data-lens data-rim="18" data-scale="16">
+      <div class="sum" id="sum"></div>
+      <div class="chartc"><svg id="chart" viewBox="0 0 600 96" preserveAspectRatio="none"></svg></div>
+    </div>
+    <div class="card detail" id="detail"><div class="empty"><div class="eico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></div><b>Review a game</b><span>Pick one from the list, or paste a PGN to see accuracy, mistakes and the best moves.</span></div></div>
+    <div class="card moves" id="moves"></div>
+  </section>
+</main>
+
+<dialog id="dlg"><form method="dialog"><h2>Paste a PGN</h2><textarea id="pgn" placeholder="1. e4 e5 2. Nf3 …  (headers optional)"></textarea><div class="drow"><button class="btn ghost" value="cancel">Cancel</button><button class="btn primary" id="pgnGo" value="ok">Analyze</button></div></form></dialog>
+<script src="liquid.js"></script><script src="analysis-liquid.js"></script>
+<script src="chess.js"></script><script src="brain.js"></script><script src="customization/pieces.js"></script><script src="customization/customization.js"></script><script src="analysis.js"></script>
+</body></html>
