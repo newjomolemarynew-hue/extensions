@@ -26,6 +26,7 @@ self.BMLivePanel = () => {
   let hist = { start: null, plies: [] }; const evalLog = new Map();
   let mode = { cls: "unknown", base: null };
   let lastMe = null, gameInfo = null, lastRenderKey = "", lastRenderAt = 0, lastArrowKey = "";
+  let gameOverAnalysisShown = false, analysisPrompt = null;
   const _ids = new WeakMap(); let _idc = 0; const idOf = (o) => (o == null ? 0 : _ids.get(o) || (_ids.set(o, ++_idc), _idc));
 
   const boardFeature = self.BMBoardState.create(C);
@@ -46,6 +47,34 @@ self.BMLivePanel = () => {
   const NAMES = { p: "pawn", n: "knight", b: "bishop", r: "rook", q: "queen", k: "king" };
   const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
+  function showGameOverAnalysis() {
+    if (gameOverAnalysisShown || analysisPrompt || !hist.plies.length) return;
+    gameOverAnalysisShown = true;
+    const host = document.createElement("div");
+    host.setAttribute("data-bm-analysis-prompt", "1");
+    host.style.cssText = "position:fixed;right:20px;bottom:20px;z-index:2147483646;";
+    const root = host.attachShadow({mode:"open"});
+    root.innerHTML = `
+      <style>
+        :host{all:initial}.card{font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f5f7ff;width:290px;padding:14px 15px;border-radius:18px;background:rgba(22,25,38,.9);backdrop-filter:blur(18px);box-shadow:0 18px 50px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);animation:in .25s ease}
+        @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+        .top{display:flex;align-items:flex-start;gap:10px}.icon{font-size:22px}.copy{flex:1}.title{font-weight:750;font-size:14px}.sub{margin-top:3px;color:#aeb5c8;font-size:12px}.x{border:0;background:none;color:#9da5b8;cursor:pointer;font-size:17px}
+        .actions{display:flex;gap:8px;margin-top:12px}.open{flex:1;border:0;border-radius:10px;padding:9px 12px;background:#0a84ff;color:white;font-weight:700;cursor:pointer}.later{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#eef1f8;border-radius:10px;padding:9px 12px;cursor:pointer}
+      </style>
+      <div class="card" role="dialog" aria-label="Game finished">
+        <div class="top"><div class="icon">♞</div><div class="copy"><div class="title">Game finished</div><div class="sub">Open your game in the KnightScope analysis board.</div></div><button class="x" aria-label="Close">×</button></div>
+        <div class="actions"><button class="open">Open analysis</button><button class="later">Later</button></div>
+      </div>`;
+    const remove=()=>{if(host.isConnected)host.remove();analysisPrompt=null;};
+    root.querySelector(".open").addEventListener("click",()=>{
+      const payload={startFen:hist.start,ucis:hist.plies.map(p=>p.uci)};
+      try{chrome.runtime.sendMessage({type:"openAnalysis",payload},()=>void chrome.runtime.lastError);}catch(_){}
+      remove();
+    });
+    root.querySelector(".later").addEventListener("click",remove);
+    root.querySelector(".x").addEventListener("click",remove);
+    document.documentElement.appendChild(host); analysisPrompt=host;
+  }
   const reviewFeature = self.BMReview ? self.BMReview.create({ getAccent: () => COLORS[S.color] }) : null;
   if (reviewFeature) cleanups.push(() => reviewFeature.destroy());
   const LIVE_NOW = { bot: 1, bullet: 1, blitz: 1, rapid: 1, classical: 1, daily: 1 };
@@ -848,7 +877,9 @@ self.BMLivePanel = () => {
     st = readState(board); if (st.me) lastMe = st.me;
     if (!sane(st.fen)) { resp = null; clearArrows(); render(); return; }          // never feed the engine an impossible position
     trackHistory(st); trackPlies(st.fen); detectMode(st);
-    if (reviewFeature) reviewFeature.update({ mode, st, over: gameIsOver(st) });
+    const overNow = gameIsOver(st);
+    if (reviewFeature) reviewFeature.update({ mode, st, over: overNow });
+    if (overNow) showGameOverAnalysis(); else if (st.full <= 1 && st.turn === "w") gameOverAnalysisShown = false;
     if (whatsNew) whatsNew.setPlaying(!!LIVE_NOW[mode.cls] && st && (st.full > 1 || st.turn === "b") && !gameIsOver(st));
     if (status === "err" && retryAt && Date.now() > retryAt && errRuns < 6 && st.fen === lastFen) { errRuns++; retryAt = 0; status = "busy"; if (st.turn === st.me || !S.myTurnOnly) analyze(st.fen); }
     playerRatingsFeature.update(board, st, mode);
@@ -898,7 +929,7 @@ self.BMLivePanel = () => {
     maiaRequest++;
     autoPlayFeature.cancel();
     try { clearArrows(); } catch (_) {} host.remove();
-    try { speechSynthesis.cancel(); } catch (_) {} window.__bm = null;
+    try { speechSynthesis.cancel(); } catch (_) {} try { analysisPrompt && analysisPrompt.remove(); } catch (_) {} analysisPrompt=null; window.__bm = null;
   } };
 
   let errs = 0;
