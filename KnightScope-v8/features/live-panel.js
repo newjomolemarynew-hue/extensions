@@ -63,7 +63,7 @@ self.BMLivePanel = () => {
       </style>
       <div class="card" role="dialog" aria-label="Game finished">
         <div class="top"><div class="icon">♞</div><div class="copy"><div class="title">Game finished</div><div class="sub">Open your game in the KnightScope analysis board.</div></div><button class="x" aria-label="Close">×</button></div>
-        <div class="actions"><button class="open">Analysis</button><button class="later">Later</button></div>
+        <div class="actions"><button class="open">Open Analysis Board</button><button class="later">Later</button></div>
       </div>`;
     const remove=()=>{if(host.isConnected)host.remove();analysisPrompt=null;};
     root.querySelector(".open").addEventListener("click",()=>{
