@@ -7,26 +7,23 @@ on:
       - ".github/workflows/package-knightscope-v8.yml"
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
+  actions: write
 jobs:
   package:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Build extension ZIP
         run: |
           cd KnightScope-v8
           zip -qr ../KnightScope-v8.zip .
           cd ..
           unzip -t KnightScope-v8.zip
-      - name: Commit ZIP
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add KnightScope-v8.zip
-          if ! git diff --cached --quiet; then
-            git commit -m "Build KnightScope V8 package"
-            git push
-          fi
+      - name: Upload V8 ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KnightScope-v8
+          path: KnightScope-v8.zip
+          if-no-files-found: error
+          retention-days: 30
