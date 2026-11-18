@@ -2,33 +2,31 @@
 
 KnightScope V8 is the unified Chess.com analysis build.
 
-## What's new in V8
-- One analysis board is used for game review, end-game analysis, and Best Move analysis.
-- Best Move is hidden when Chess.com first loads and opens/closes with Alt+B.
-- Latest Chess.com games are available in the unified analysis window, defaulting to RhonSubhash.
-- Fast, Standard, and Thorough review depths are retained.
-- The engine selector lists Stockfish 19, Maia, Torch, Leela Chess Zero, PlentyChess, Berserk, Reckless, Koivisto, Ethereal, Caissa, Viridithas, and Stormphrax.
-- Stockfish 19 remains the bundled, fully operational post-game engine in this repository build; other listed engines are not presented as bundled until their browser-compatible engine packages are added.
-- The V7 knight toolbar icon is retained.
-- Customization Studio remains available.
-- The AI chatbot/OpenAI API feature is removed from V8.
+## What's included
+- A single Analysis Board for manual PGN analysis and finished-game review.
+- The game-finished **Analysis** button and the Best Move tab's **Open analysis board** button both open `analysis.html` through the same `openAnalysis` runtime message.
+- Finished-game move history is passed into the board using the game's starting FEN and UCI moves.
+- Fast, Standard, and Thorough depth presets are available inside the Analysis Board (not in the game-finished popup).
+- Stockfish 19 is the bundled, operational analysis engine.
+- Maia, Torch, Leela Chess Zero, PlentyChess, Berserk, Reckless, Koivisto, Ethereal, Caissa, Viridithas, and Stormphrax are shown as unavailable until their actual compatible engine packages are added. They are not falsely advertised as working.
+- Best Move panel is controlled with Alt+B; it should not open automatically on Chess.com load.
+- Customization Studio and the existing Best Move features are retained.
+- No AI chatbot or OpenAI API key is required.
 
 ## Install
-1. Download and extract KnightScope-v8.zip.
-2. Open chrome://extensions.
-3. Enable Developer mode.
-4. Choose Load unpacked.
-5. Select the extracted KnightScope-v8 folder directly.
+1. Download the latest `KnightScope-v8.zip` from the repository or the V8 GitHub Actions artifact.
+2. Extract the ZIP.
+3. Open `chrome://extensions`.
+4. Enable Developer mode.
+5. Choose **Load unpacked** and select the extracted `KnightScope-v8` folder.
 
-There is no unnecessary outer folder.
+The ZIP is packaged with the extension files at its root, without an extra enclosing folder.
 
 ## Controls
-- Alt+B — toggle Best Move.
-- Alt+S — toggle Best Move engine activity.
-- Alt+M — collapse/expand the Best Move panel.
-- Alt+A — hold for the panel's peek behavior.
-- F — flip the analysis board.
-- Arrow keys — move through a reviewed game.
+- **Alt+B** — toggle the Best Move panel.
+- **Fast / Standard / Thorough** — choose analysis depth in the Analysis Board.
+- **Arrow keys** — navigate through a reviewed game.
+- **F** — flip the Analysis Board.
 
 ## Versioning
-V8 is kept separate from V7 and earlier builds. The root README describes the current V8 repository state.
+V8 is kept separate from V7 and earlier versions. This root README describes the V8 repository build.
