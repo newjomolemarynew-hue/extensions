@@ -76,7 +76,7 @@
   async function runAnalysis() {
     const tok = S.token, depth = +$("speed").value, n = S.fens.length;
     const meta = ENGINE_META[S.engine] || ENGINE_META.stockfish;
-    if (!meta.bundled) { setStatus(meta.label + " is listed, but its browser engine package is not bundled in V9."); $("prog").style.width = "0"; return; }
+    if (!meta.bundled) { setStatus(meta.label + " is listed, but its browser engine package is not bundled in V10."); $("prog").style.width = "0"; return; }
     eng = eng || new Engine(meta.worker || "engine/stockfish.js");
     for (let i = 0; i < n; i++) {
       if (tok !== S.token) return;
