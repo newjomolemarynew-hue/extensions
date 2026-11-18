@@ -873,14 +873,20 @@ self.BMLivePanel = () => {
     render();
   }
 
+  // V8 shortcut handler: capture at window level so Chess.com's own keyboard handlers
+  // cannot swallow Alt+B before KnightScope sees it.
+  const toggleBestMove = (e) => {
+    if (!e.altKey || String(e.key).toLowerCase() !== "b") return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    host.style.visibility = "";
+    host.style.display = host.style.display === "none" ? "" : "none";
+  };
+  on(window, "keydown", toggleBestMove, true);
   on(document, "keydown", (e) => {
     if (!e.altKey) return;
     const k = e.key.toLowerCase();
-    if (k === "b") {
-      e.preventDefault(); e.stopPropagation();
-      host.style.display = host.style.display === "none" ? "" : "none";
-      return;
-    }
     if (k === "s") save({ enabled: !S.enabled });
     if (k === "m") save({ collapsed: !S.collapsed });
     if (k === "a") peekHeld = true;
