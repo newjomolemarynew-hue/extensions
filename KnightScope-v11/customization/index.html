@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Studio · Best Move</title>
+<link rel="stylesheet" href="../liquid.css"><link rel="stylesheet" href="studio.css"></head>
+<body>
+<div class="ambient"></div>
+<div class="app">
+  <header class="hdr glass" data-lens>
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7.5l8 4.5 8-4.5zM4 12l8 4.5 8-4.5M4 16.5 12 21l8-4.5"/></svg></div>
+    <div class="ttl"><h1>Studio</h1><div class="sub">Pick a piece set, add effects, style the board. Saved automatically.</div></div>
+    <span class="saved" id="saved">Saved</span>
+  </header>
+
+  <main>
+    <section class="card pane left" data-lens>
+      <div class="pvsel" id="pvsel" role="group" aria-label="Preview"><button data-v="board" class="on" type="button">Board</button><button data-v="p" type="button">Pawn</button><button data-v="n" type="button">Knight</button><button data-v="b" type="button">Bishop</button><button data-v="r" type="button">Rook</button><button data-v="q" type="button">Queen</button><button data-v="k" type="button">King</button></div>
+      <div class="stage"><div class="pv" id="pv"><canvas id="pvbfx"></canvas><div class="btex"></div><canvas id="pvfx"></canvas></div>
+        <div class="pvp" id="pvp" hidden><div class="pvcell l"><div class="pp wk" id="pvW"></div></div><div class="pvcell d"><div class="pp bk" id="pvB"></div></div></div></div>
+      <div class="pvbar">
+        <button class="btn" id="demo" type="button">▶ Play a move</button>
+        <button class="btn ghost" id="pvflip" type="button">Flip</button>
+        <span class="muted small" id="pvnote"></span>
+      </div>
+    </section>
+
+    <section class="card pane right" data-lens>
+      <div class="seg tabs" id="tabs" style="--n:5;--i:0"><i class="th"></i>
+        <button data-t="pieces" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4a2.6 2.6 0 0 1 1.5 4.7c1.3 1 2.1 2.6 2.1 4.3 0 1.3-.4 2.4-1 3.3h2.4V20H7V16.3h2.4c-.6-.9-1-2-1-3.3 0-1.7.8-3.3 2.1-4.3A2.6 2.6 0 0 1 12 4z"/></svg>Pieces</button><button data-t="parts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3.2 4.5 4.8 4.5 9a4.5 4.5 0 0 1-9 0c0-1.8.8-3 1.7-4 .2 1.1.8 1.7 1.5 1.8C10.4 7.2 11 5 12 3z"/></svg>Parts</button><button data-t="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/></svg>Board</button><button data-t="fx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.6 4.6L18 9l-4.4 1.4L12 15l-1.6-4.6L6 9l4.4-1.4zM18.5 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>Effects</button><button data-t="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></svg>More</button>
+      </div>
+      <div class="scroll" id="scroll">
+        <div class="tab on" id="t-pieces">
+          <h3>Chess.com templates</h3>
+          <p class="muted small lead">Chess.com's own piece sets. You can still add flames, ice, wings and more on top in the Parts tab.</p>
+          <div class="grid" id="themes"></div>
+          <h3>Designed here</h3>
+          <div class="grid" id="presets"></div>
+          <div id="mineWrap" hidden><h3>My presets</h3><div class="grid" id="mine"></div></div>
+          <h3>Make it yours</h3>
+          <div class="ed">
+            <div class="r"><span>Shape</span><div class="seg" id="family" style="--n:2;--i:0"><i class="th"></i><button data-v="classic">Classic</button><button data-v="modern">Modern</button></div></div>
+            <div class="r"><span>Finish</span><div class="seg" id="style" style="--n:5;--i:0"><i class="th"></i><button data-v="solid">Flat</button><button data-v="gradient">Gradient</button><button data-v="glass">Glass</button><button data-v="outline">Line</button><button data-v="neon">Neon</button></div></div>
+            <div class="r"><span>White pieces</span><div class="cols"><label>Fill <input type="color" id="wFill"></label><label>Edge <input type="color" id="wStroke"></label></div></div>
+            <div class="r"><span>Black pieces</span><div class="cols"><label>Fill <input type="color" id="bFill"></label><label>Edge <input type="color" id="bStroke"></label></div></div>
+            <div class="sl"><span>Outline</span><input type="range" id="outline" min="0" max="6" step="0.2"><em id="outlineV"></em></div>
+            <div class="sl"><span>Shine</span><input type="range" id="gloss" min="0" max="100"><em id="glossV"></em></div>
+            <div class="sl"><span>Shadow</span><input type="range" id="shadow" min="0" max="100"><em id="shadowV"></em></div>
+            <div class="sl"><span>Glow</span><input type="range" id="glow" min="0" max="100"><em id="glowV"></em></div>
+            <div class="save"><input id="saveName" maxlength="28" placeholder="Name this look" autocomplete="off"><button class="btn primary sm" id="saveMine" type="button">Save look</button></div>
+          </div>
+        </div>
+
+        <div class="tab" id="t-parts">
+          <h3>Add parts</h3>
+          <p class="muted small lead">Stick new elements onto your pieces: ice shards, flames, wings, horns and more. Tap one to add it, then choose which pieces get it.</p>
+          <div class="grid parts" id="partTiles"></div>
+          <h3>On your pieces <span class="count" id="partCount"></span></h3>
+          <div id="partList" class="plist"></div>
+          <p class="muted small" id="partEmpty">Nothing added yet.</p>
+        </div>
+
+        <div class="tab" id="t-board">
+          <h3>Board colours</h3>
+          <div class="boards" id="boards"></div>
+          <div class="ed"><div class="r"><span>Custom squares</span><div class="cols"><label>Light <input type="color" id="cLight"></label><label>Dark <input type="color" id="cDark"></label><button class="btn ghost sm" id="swap" type="button">Swap</button></div></div></div>
+          <h3>Texture</h3>
+          <div class="chips" id="textures"></div>
+          <h3>Board animation</h3>
+          <p class="muted small lead">Live backgrounds drawn on the board itself. They sit under the pieces and pause when the tab is hidden.</p>
+          <div class="grid banim" id="boardAnims"></div>
+          <div class="ed"><div class="sl"><span>Strength</span><input type="range" id="animPower" min="10" max="100"><em id="animPowerV"></em></div></div>
+        </div>
+
+        <div class="tab" id="t-fx">
+          <h3>Particles</h3>
+          <div class="chips" id="particles"></div>
+          <div class="ed">
+            <div class="sl"><span>Amount</span><input type="range" id="density" min="5" max="100"><em id="densityV"></em></div>
+            <div class="r"><span>Burst on every move<small>A puff of particles where a piece lands</small></span><label class="tgl"><input type="checkbox" id="burst"><i></i></label></div>
+          </div>
+          <h3>Motion</h3>
+          <div class="ed">
+            <div class="r"><span>Reduce motion<small>Turns every animation and particle off</small></span><label class="tgl"><input type="checkbox" id="rm"><i></i></label></div>
+          </div>
+        </div>
+
+        <div class="tab" id="t-more">
+          <h3>Spotify</h3>
+          <div class="ed"><div class="r"><span>Mini player on Chess.com<small>Shows up when Spotify is open in a browser tab</small></span><label class="tgl"><input type="checkbox" id="spotify"><i></i></label></div></div>
+          <h3>Your data</h3>
+          <div class="ed">
+            <div class="r"><span>Back up<small>Copy your settings as text</small></span><button class="btn ghost sm" id="export" type="button">Copy</button></div>
+            <div class="r"><span>Restore<small>Paste a backup and apply it</small></span><button class="btn ghost sm" id="import" type="button">Paste</button></div>
+            <div class="r"><span>Suggest something<small>Ideas for boards, pieces and effects</small></span><button class="btn ghost sm" id="sugg" type="button">Suggest</button></div>
+            <div id="suggBox" hidden style="padding:6px 2px 10px"></div>
+            <div class="r"><span>Reset everything<small>Back to Chess.com's own look</small></span><button class="btn ghost sm" id="reset" type="button">Reset</button></div>
+          </div>
+          <textarea id="blob" hidden spellcheck="false" placeholder="Paste a backup here, then press Apply"></textarea>
+          <button class="btn primary sm" id="apply" type="button" hidden>Apply backup</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="../liquid.js"></script><script src="../analysis-liquid.js"></script>
+<script src="../features/feedback.js"></script><script src="pieces.js"></script><script src="fx.js"></script><script src="board-fx.js"></script><script src="customization.js"></script><script src="studio.js"></script>
+<script src="../window-controls.js"></script>
+</body></html>
