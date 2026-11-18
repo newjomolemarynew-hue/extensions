@@ -1,32 +1,28 @@
-# KnightScope V9
+# KnightScope V10
 
-KnightScope V9 is the next version of the unified Chess.com analysis extension. V8 remains preserved.
+KnightScope V10 improves the Live Game Analysis tab while preserving V9 and all earlier versions.
 
-## What's included
-- All V8 features: unified Analysis Board, finished-game review handoff, Best Move panel (Alt+B), customization, and Stockfish 19 analysis.
-- The Analysis Board engine worker now accepts a per-engine worker path, providing a clean integration point for additional UCI-compatible browser engines.
-- Stockfish 19 is the only standalone analysis engine currently bundled and enabled.
-- Maia's existing neural-network models remain bundled for the Best Move feature's human-like move selection. Maia is **not** presented as a standalone evaluation engine in the Analysis Board.
-- Torch, Leela Chess Zero, PlentyChess, Berserk, Reckless, Koivisto, Ethereal, Caissa, Viridithas, and Stormphrax remain disabled until their compatible browser workers, runtime assets, and required network files are included and verified.
-- No chatbot or OpenAI API key is required.
+## Live Game Analysis
+- Live engine status panel with Stockfish 19 state, search depth, elapsed time, and available variations.
+- Fast, Auto, and Deep thinking controls directly in the Analysis tab.
+- One, two, or three principal variations selectable directly in the Analysis tab.
+- Improved move-review progress, separate accuracy summaries, move classification counts, and a longer recent-move list.
+- Unsupported engine choices are no longer presented as selectable live engines.
 
-## Engine integration status
-V9 establishes the worker-path interface but does not falsely enable engines whose browser packages are absent. Additional engines will be added in later updates, with the goal of making all 12 selector options operational. Each integration must include its actual engine files, required network assets (where applicable), license/source notices, and a tested worker bridge.
+## Engine status
+- Stockfish 19 is the only standalone live-game analysis engine currently bundled and enabled.
+- Maia remains available for human-like move selection in Best Move; it is not a standalone evaluation engine.
+- Torch, Leela Chess Zero, and other planned engines remain unavailable until their browser workers, runtime/network assets, and license notices are integrated and tested.
+- V10 improves the use and presentation of the existing Stockfish engine; it does not claim additional engines have been bundled.
 
 ## Install
-1. Download `KnightScope-v9.zip` from this repository or the V9 GitHub Actions artifact.
-2. Extract the ZIP.
-3. Open `chrome://extensions`.
-4. Enable Developer mode.
-5. Choose **Load unpacked** and select the extracted `KnightScope-v9` folder.
+1. Download KnightScope-v10.zip and extract it.
+2. Open chrome://extensions, enable Developer mode, choose Load unpacked, and select the extracted KnightScope-v10 folder.
 
-The ZIP is packaged with the extension files at its root, without an extra enclosing folder.
+The ZIP contains extension files at its root. V9 and earlier versions remain preserved.
 
 ## Controls
-- **Alt+B** — toggle the Best Move panel.
-- **Fast / Standard / Thorough** — choose analysis depth in the Analysis Board.
-- **Arrow keys** — navigate through a reviewed game.
-- **F** — flip the Analysis Board.
-
-## Versioning
-V9 is stored separately from V8 and all earlier versions. The V8 folder and ZIP are not modified.
+- Alt+B toggles the Best Move panel.
+- Fast / Auto / Deep control live Stockfish thinking time.
+- 1 / 2 / 3 variations select principal variations.
+- Fast / Standard / Thorough select Analysis Board depth.
