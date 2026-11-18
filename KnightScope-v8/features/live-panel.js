@@ -75,8 +75,8 @@ self.BMLivePanel = () => {
     root.querySelector(".x").addEventListener("click",remove);
     document.documentElement.appendChild(host); analysisPrompt=host;
   }
-  const reviewFeature = self.BMReview ? self.BMReview.create({ getAccent: () => COLORS[S.color] }) : null;
-  if (reviewFeature) cleanups.push(() => reviewFeature.destroy());
+  const reviewFeature = null; // V8: game-end flow uses the unified Analysis Board prompt instead of the old review card.
+  
   const LIVE_NOW = { bot: 1, bullet: 1, blitz: 1, rapid: 1, classical: 1, daily: 1 };
   const whatsNew = self.BMWhatsNew ? self.BMWhatsNew.create({ actions: {
     openUrl: (url) => { try { window.open(url, "_blank", "noopener,noreferrer"); } catch (_) {} },
