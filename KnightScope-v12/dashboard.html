@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KnightScope</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <div class="brand">
+        <img class="brand-logo" src="icons/knight.png" alt="">
+        <span class="brand-copy"><span class="brand-name">Knight<span>Scope</span></span><span class="tagline">ANALYSE. REVIEW. IMPROVE.</span></span>
+      </div>
+      <span class="version">V11</span>
+    </header>
+
+    <nav class="tabs" aria-label="KnightScope tools">
+      <button class="tab active" data-view="review" aria-selected="true">Game review</button>
+      <button class="tab" data-view="analysis" aria-selected="false">Best move</button>
+    </nav>
+
+    <section class="view active" id="review-view">
+      <div class="intro">
+        <span class="eyebrow">AFTER THE GAME</span>
+        <h1>Review your game</h1>
+        <p>See move classifications, accuracy, mistakes and explanations.</p>
+      </div>
+      <div class="game-card">
+        <div class="game-icon">↗</div>
+        <div class="game-copy">
+          <strong id="game-title">Checking this Chess.com tab…</strong>
+          <span id="game-subtitle">Open a completed game to get started.</span>
+        </div>
+        <span class="live-dot" id="game-dot"></span>
+      </div>
+      <button class="primary" id="review-btn" disabled>Review this game <span>→</span></button>
+      <label class="toggle-row">
+        <span class="toggle-copy"><strong>Automatic review</strong><small>Open the review when a game ends</small></span>
+        <input type="checkbox" id="auto-review">
+        <span class="switch"></span>
+      </label>
+      <p class="hint" id="review-status" role="status">Looking for a Chess.com game…</p>
+    </section>
+
+    <section class="view" id="analysis-view" hidden>
+      <div class="intro">
+        <span class="eyebrow">DURING OR AFTER A GAME</span>
+        <h1>Best move analysis</h1>
+        <p>Use the Stockfish and Maia tools from Best Move to explore positions and candidate moves.</p>
+      </div>
+      <div class="feature-list">
+        <div class="feature"><span class="feature-icon">⌖</span><div><strong>Live position tools</strong><small>Best-move suggestions and alternative lines on Chess.com.</small></div></div>
+        <div class="feature"><span class="feature-icon">♟</span><div><strong>Position analysis</strong><small>Open the full analysis board, load a game or paste a PGN.</small></div></div>
+        <div class="feature"><span class="feature-icon">⚙</span><div><strong>Customisation</strong><small>Keep your existing board, piece and panel settings.</small></div></div>
+      </div>
+      <button class="primary" id="analysis-btn">Open analysis board <span>→</span></button>
+      <button class="secondary-btn" id="panel-btn">Show Best Move panel on this tab</button>
+      <p class="hint" id="analysis-status" role="status">The live panel appears on Chess.com pages.</p>
+    </section>
+
+    
+
+<footer>
+      <span class="footer-mark">♞</span>
+      <span>One toolkit. Two ways to analyse.</span>
+      <a href="https://github.com/newjomolemarynew-hue/extensions" target="_blank" rel="noopener">GitHub ↗</a>
+    </footer>
+  </main>
+  <script src="dashboard.js"></script><script src="version-label.js"></script>
+</body>
+</html>
