@@ -2,7 +2,7 @@
   let version = "1";
   try { version = String(chrome.runtime.getManifest().version).split(".")[0]; } catch (_) {}
   const label = "V" + version;
-  document.title = (document.title || "KnightScope").replace(/KnightScope(?:\\s+V\\d+)?/i, "KnightScope " + label);
+  document.title = (document.title || "KnightScope").replace(/KnightScope(?:\s+V\d+)?/i, "KnightScope " + label);
   document.querySelectorAll(".version").forEach((el) => { el.textContent = label; });
   document.querySelectorAll(".top, .hdr").forEach((header) => {
     if (header.querySelector(".knightscope-version")) return;
