@@ -2,7 +2,7 @@
   const render = (I) => `<div class="card" id="card">
   <i class="lite"></i>
   <div class="hd" id="head">
-    <div class="brand"><div class="logo">${I.logo}</div><div><div class="nm">Best Move</div><div class="mode" id="mode"><span class="mi" id="modeIcon"></span><span id="modeText">Live game</span></div></div></div>
+    <div class="brand"><div class="logo">${I.logo}</div><div><div class="nm">Best Move <span class="knightscope-version" style="font-size:10px;opacity:.7">V${String(chrome.runtime.getManifest().version).split(".")[0]}</span></div><div class="mode" id="mode"><span class="mi" id="modeIcon"></span><span id="modeText">Live game</span></div></div></div>
     <div class="hr"><span class="st" id="pill" title="Ready"><i></i><span id="pillT">Ready</span></span><button class="rb gi" id="bPeek" title="Hide / show arrows (hold Alt+A to peek)">${I.eye}</button><button class="rb gi" id="bPower" title="Pause / resume (Alt+S)">${I.pwr}</button><button class="rb gi" id="min" title="Minimise (Alt+M)">${I.min}</button><button class="rb gi" id="closePanel" title="Close panel; reopen from the Best Move extension menu">${I.close}</button></div>
   </div>
   <div class="mini"><div><div class="mv" id="miniMove">—</div><span class="mt" id="miniEval">—</span></div></div>
