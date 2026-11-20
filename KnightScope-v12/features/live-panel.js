@@ -875,7 +875,6 @@ self.BMLivePanel = () => {
         ? automatic.maiaElo == null ? "Showing the engine's best move. This bot's rating is outside the human-like range." : "Ready. Moves will match this bot's level."
         : "Off. You're seeing the engine's best move.";
       $("maiaNote").textContent = "";
-      if (S.liveEngine === "maia") $("maiaNote").textContent = `Top move probability: ${maiaResp.moves?.[0]?.probability != null ? (maiaResp.moves[0].probability * 100).toFixed(1) + "%" : "—"}. Stockfish provides the position evaluation.`;
     } else if (!st || !board) {
       $("maiaMove").textContent = "Waiting for the game…";
       $("maiaNote").textContent = "";
@@ -887,6 +886,7 @@ self.BMLivePanel = () => {
       const stockfishSan = B.sanOf(resp.fen, resp.stockfishMove);
       $("maiaMove").textContent = S.liveEngine === "maia" ? `Maia suggests ${humanSan}` : `Play ${humanSan}`;
       $("maiaNote").textContent = (humanSan === stockfishSan ? `Also the engine's top choice. Picked from ${maiaResp.candidateCount} good moves.` : `A real player would likely choose this over the engine's top move (${stockfishSan}). Picked from ${maiaResp.candidateCount} good moves.`);
+       if (S.liveEngine === "maia") $("maiaNote").textContent = `Top move probability: ${maiaResp.moves?.[0]?.probability != null ? (maiaResp.moves[0].probability * 100).toFixed(1) + "%" : "—"}. Stockfish provides the position evaluation.`;
     } else {
       $("maiaMove").textContent = maiaStatus || "Waiting for the engine…";
       $("maiaNote").textContent = "";
