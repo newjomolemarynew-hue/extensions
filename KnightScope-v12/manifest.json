@@ -3,7 +3,7 @@
   "name": "KnightScope",
   "short_name": "KnightScope",
   "version": "12.0.0",
-  "description": "KnightScope V12 — multi-engine Analysis Board with Stockfish 19, PlentyChess 8.0 and Stormphrax 8.0.",
+  "description": "KnightScope V12 — Chess.com tools with Stockfish 19 analysis.",
   "permissions": [
     "offscreen",
     "scripting",

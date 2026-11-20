@@ -39,7 +39,7 @@
     dispose(){try{this.w.terminate();}catch(_){}this.cur=null;this.currentReject=null;}
   }
   let eng=null; const cache=new Map();
-  const ENGINE_META={stockfish:{label:"Stockfish 19",bundled:true,worker:"engine/stockfish.js"},plentychess:{label:"PlentyChess 8.0",bundled:true,worker:"engine/uci-bridge.js?engine=plentychess"},stormphrax:{label:"Stormphrax 8.0",bundled:true,worker:"engine/uci-bridge.js?engine=stormphrax"},maia:{label:"Maia",bundled:false},torch:{label:"Torch",bundled:false},lc0:{label:"Leela Chess Zero",bundled:false},berserk:{label:"Berserk",bundled:false},reckless:{label:"Reckless",bundled:false},koivisto:{label:"Koivisto",bundled:false},ethereal:{label:"Ethereal",bundled:false},caissa:{label:"Caissa",bundled:false},viridithas:{label:"Viridithas",bundled:false}};
+  const ENGINE_META={stockfish:{label:"Stockfish 19",bundled:true,worker:"engine/stockfish.js"}};
   const lineCount=()=>2;
 
   // ================= Chess.com move sounds =================

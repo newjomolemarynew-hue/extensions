@@ -15,24 +15,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Download pinned browser engines
-        run: |
-          set -euo pipefail
-          cd KnightScope-v12/engine
-          fetch_asset() {
-            local url="$1" file="$2" expected="$3" bytes="$4"
-            curl --fail --location --retry 3 --retry-delay 2 "$url" -o "$file"
-            echo "$expected  $file" | sha256sum --check --status
-            actual=$(stat -c%s "$file")
-            test "$actual" = "$bytes" || { echo "Unexpected size for $file: $actual"; exit 1; }
-          }
-          base=https://assets.0x88.app
-          fetch_asset "$base/plentychess/plentychess-emscripten.js" plentychess-emscripten.js fe98220301e57b4afad6b5429001403bb46a612f74514dda44508691cc247a09 70903
-          fetch_asset "$base/plentychess/plentychess-emscripten.wasm" plentychess-emscripten.wasm bc65d81536c9fe27b9b5de90c9ecc106056d3f4afba5e038f4087301a8c039e1 395075
-          fetch_asset "$base/plentychess/plentychess-emscripten.data" plentychess-emscripten.data 5cedef19778f1bb784e181fc013543127d1fdcde227795710b1a48f6e53d79cd 53111616
-          fetch_asset "$base/stormphrax/stormphrax-emscripten.js" stormphrax-emscripten.js 4c95a359f1c09760611d09ea6a3fa4a451407c699d14ef559940d37365a4bfec 70611
-          fetch_asset "$base/stormphrax/stormphrax-emscripten.wasm" stormphrax-emscripten.wasm 0db54ba63defc45c55208545b6507f64bc9d277e47d3c4203e8070d9c7b1b294 697070
-          fetch_asset "$base/stormphrax/stormphrax-emscripten.data" stormphrax-emscripten.data 04d651e078b7c7334709dbd772d40a23c0a5480e93e19521a03020c7d633f2cf 55914848
       - name: Validate manifest, assets and JavaScript
         run: |
           node <<'NODE'
@@ -50,9 +32,9 @@ jobs:
           if (livePanel.includes('BMSpotifyWidget') || livePanel.includes('type: "warm"')) throw new Error('Removed Spotify or eager-engine code remains in live panel');
           if (fs.readFileSync(path.join(root,'content.js'),'utf8').includes('var As=500,')) throw new Error('Game observer heartbeat is not throttled');
           for (const group of manifest.content_scripts || []) for (const file of group.js || []) if (!fs.existsSync(path.join(root, file))) throw new Error('Missing content script: ' + file);
-          for (const file of ['engine/uci-bridge.js','engine/plentychess-emscripten.js','engine/plentychess-emscripten.wasm','engine/plentychess-emscripten.data','engine/stormphrax-emscripten.js','engine/stormphrax-emscripten.wasm','engine/stormphrax-emscripten.data']) if (!fs.existsSync(path.join(root,file))) throw new Error('Missing engine file: ' + file);
+          for (const file of ['engine/stockfish.js','engine/stockfish.wasm']) if (!fs.existsSync(path.join(root,file))) throw new Error('Missing engine file: ' + file);
           const html = fs.readFileSync(path.join(root,'analysis.html'),'utf8');
-          for (const id of ['stockfish','plentychess','stormphrax']) if (!html.includes('value="'+id+'"')) throw new Error('Missing engine selector option: '+id);
+          for (const id of ['stockfish']) if (!html.includes('value="'+id+'"')) throw new Error('Missing engine selector option: '+id);
           console.log('Manifest and engine assets validated:', manifest.version);
           NODE
           find KnightScope-v12 -type f -name '*.js' -print0 | xargs -0 -n1 node --check
