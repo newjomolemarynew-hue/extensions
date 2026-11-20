@@ -15,6 +15,21 @@ const ratingCachePrefix = "bmChessComRatings:";
 const ratingCacheTtl = 12 * 60 * 60 * 1000;
 let ratingQueue = Promise.resolve();
 const ratingRequests = new Map();
+const injectedTabCss = new Map();
+
+async function setTabCss(tabId, css) {
+  const previous = injectedTabCss.get(tabId);
+  if (previous) {
+    await chrome.scripting.removeCSS({ target: { tabId }, css: previous });
+    injectedTabCss.delete(tabId);
+  }
+  if (css) {
+    await chrome.scripting.insertCSS({ target: { tabId }, css });
+    injectedTabCss.set(tabId, css);
+  }
+}
+
+chrome.tabs.onRemoved.addListener((tabId) => injectedTabCss.delete(tabId));
 
 // Optional integrations are disabled in this Chess.com-only build.
 
