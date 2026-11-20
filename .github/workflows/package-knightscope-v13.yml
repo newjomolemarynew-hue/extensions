@@ -34,7 +34,7 @@ jobs:
           for (const group of manifest.content_scripts || []) for (const file of group.js || []) if (!fs.existsSync(path.join(root, file))) throw new Error('Missing content script: ' + file);
           for (const file of ['engine/stockfish.js','engine/stockfish.wasm']) if (!fs.existsSync(path.join(root,file))) throw new Error('Missing engine file: ' + file);
           const offscreen = fs.readFileSync(path.join(root,'offscreen.js'),'utf8');
-          if (!offscreen.includes('new Worker("engine/stockfish.js")')) throw new Error('Offscreen Stockfish worker path does not match packaged engine directory');
+          if (!offscreen.includes('chrome.runtime.getURL("engine/stockfish.js")')) throw new Error('Offscreen Stockfish worker path does not match packaged engine directory');
           const html = fs.readFileSync(path.join(root,'analysis.html'),'utf8');
           for (const id of ['stockfish']) if (!html.includes('value="'+id+'"')) throw new Error('Missing engine selector option: '+id);
           console.log('Manifest and engine assets validated:', manifest.version);
