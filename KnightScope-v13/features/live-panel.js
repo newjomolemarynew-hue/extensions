@@ -7,7 +7,7 @@ self.BMLivePanel = () => {
   const cleanups = [], timers = [];
   const on = (t, e, f) => { t.addEventListener(e, f); cleanups.push(() => t.removeEventListener(e, f)); };
 
-  const DEFAULTS = { enabled: true, elo: 3200, speed: "auto", lines: 1, color: "blue", myTurnOnly: true, peek: false, collapsed: false, corner: "br",
+  const DEFAULTS = { enabled: true, elo: 3200, speed: "auto", lines: 1, color: "blue", myTurnOnly: false, peek: false, collapsed: false, corner: "br",
                      avoidRep: true, coach: true, voice: false, glass: 55, style: "regular", theme: "dark", reduceMotion: false,
                      premove: "auto", oppMode: "auto", oppElo: 1500, autoPlay: false,
                      autoOpponent: true, liveEngine: "stockfish",
@@ -18,7 +18,7 @@ self.BMLivePanel = () => {
     : null;
   const CUSTOM_DEFAULTS = self.BMCustomization.DEFAULTS;
   const COLORS = { blue: "10,132,255", green: "48,209,88", orange: "255,159,10", pink: "255,55,95", purple: "191,90,242" };
-  const ANALYSIS_KEYS = ["elo", "speed", "lines", "avoidRep", "myTurnOnly", "enabled", "premove", "oppMode", "oppElo", "autoOpponent", "liveEngine"];
+  const ANALYSIS_KEYS = ["elo", "speed", "lines", "avoidRep", "enabled", "premove", "oppMode", "oppElo", "autoOpponent", "liveEngine"];
   let S = { ...DEFAULTS };
   let retryAt = 0, errRuns = 0, lastFen = "", resp = null, maiaResp = null, maiaStatus = "", maiaRequest = 0, peekHeld = false, status = "init", engineMsg = "";
   let seen = {}, lastHistFen = null, lastFull = 0, prevScore = null, st = null, insKey = "";
@@ -763,7 +763,7 @@ self.BMLivePanel = () => {
     const total=hist.plies.length,pending=Math.max(0,total-judged.length),pct=total?Math.round(judged.length/total*100):0;
     const sum=`<div class="reviewProgress"><div><b>Move review</b><span>${judged.length} of ${total} moves evaluated</span></div><div class="progressTrack"><i style="width:${pct}%"></i></div></div><div class="cmp"><div><b>${accOf(me)}</b><span>Your accuracy</span></div><div><b>${accOf(me==="w"?"b":"w")}</b><span>Opponent accuracy</span></div></div><div class="reviewSplit"><div><span class="reviewSide">YOUR MOVES</span><div class="chips single">${chips(mine)||'<span class="none">No rated moves yet</span>'}</div></div><div><span class="reviewSide">OPPONENT</span><div class="chips single">${chips(opp)||'<span class="none">No rated moves yet</span>'}</div></div></div><div class="reviewPending">${pending?`${pending} move${pending===1?"":"s"} waiting for engine evaluation`:total?"All detected moves have been evaluated":"Move evaluations appear here as the game progresses"}</div>`;
     const mv=hist.plies.slice(-20).map((p,i)=>`<span class="mchip ${p.mover===me?"mine":"opp"}" title="${p.j?B.CLASSES[p.j.cls].label+" · "+p.j.loss.toFixed(1)+"% win chance lost":"Waiting for evaluation"}"><small>${Math.max(0,total-20)+i+1}.</small>${p.j?B.badge(p.j.cls,15):'<i class="movePending"></i>'}${p.san}</span>`).join("")||'<span class="none">No moves yet. Start a game to see live move ratings.</span>';
-    const engineState=!S.enabled?"Paused":!st?"Waiting":status==="err"?"Error":!resp||!resp.final?"Thinking":(st.turn!==st.me&&S.myTurnOnly?"Waiting for turn":"Ready"),top=resp&&resp.lines?resp.lines[0]:null;
+    const engineState=!S.enabled?"Paused":!st?"Waiting":status==="err"?"Error":!resp||!resp.final?"Thinking":"Ready",top=resp&&resp.lines?resp.lines[0]:null;
     return {sum,mv,engineState,depth:top&&top.depth?String(top.depth):"—",time:resp&&resp.ms?(resp.ms<1000?resp.ms+" ms":(resp.ms/1000).toFixed(1)+" s"):"—",lines:resp&&resp.lines?String(resp.lines.length):"—"};
   }
   let lastSig = "";
@@ -783,28 +783,11 @@ self.BMLivePanel = () => {
     const v = { sig: [], modeCls: mode.cls, modeText: meta[0] + (mode.base ? " · " + fmtBase(mode.base) : ""), modeColor: meta[1], pill: ["", "Ready"], label: "Best move for you", status: "", pc: "", m1: "—", m2: "—", promo: "", kind: "play", san: "",
       ev: "—", evCls: "", wMe: null, depth: "—", ms: "—", lines: "", rows: "", pre: null, opp: "", lm: "", err: status === "err" ? engineMsg : "", det: detectedOpp() };
     const mineTurn = st && st.turn === st.me;
+    v.label = mineTurn ? "Best move for you" : "Best move for opponent";
     if (!S.enabled) { v.pill = ["off", "Paused"]; v.status = "Paused"; }
     else if (!board) { v.pill = ["off", "No game"]; v.status = "Open a game to start"; }
     else if (status === "over") { v.pill = ["off", "Game over"]; v.status = "No legal moves"; }
-    else if (st && !mineTurn && premoveActive()) {
-      v.label = "Opponent's move"; v.pill = ["wait", "Their turn"];
-      if (pre && pre.fen === st.fen && pre.state === "unrated") {
-        v.status = "Their rating isn't available for this game type.";
-      } else if (!pre || pre.fen !== st.fen || !pre.cands || !pre.cands.length) { v.pill = ["busy", "Reading"]; v.status = "Predicting their move…"; }
-      else {
-        const c0 = pre.cands[0];
-        v.label = "Likely reply"; v.kind = "expect"; v.status = pre.state === "thinking" ? "Checking replies…" : "Rated " + pre.oppElo;
-        if (pre.state === "thinking") v.pill = ["busy", "Checking"];
-        v.pc = pieceLetter(pre.fen, c0.move.slice(0, 2)); v.m1 = c0.move.slice(0, 2); v.m2 = c0.move.slice(2, 4); v.promo = c0.move[4] ? "=" + c0.move[4].toUpperCase() : ""; v.san = B.sanOf(pre.fen, c0.move);
-        v.ev = fmtScore(c0.score, st.turn); v.wMe = 100 - winPct(c0.score); v.evCls = -c0.score > 80 ? "good" : -c0.score < -80 ? "bad" : "";
-        v.rows = pre.cands.map((c) => row("var(--ex)", mvTxt(pre.fen, c.move), `<span class="pb"><em style="width:${Math.round(c.p * 100)}%"></em></span>`, Math.round(c.p * 100) + "%")).join("");
-        if (pre.state === "safe" || pre.state === "trapsafe") {          // only ever shown when there is a real, safe premove
-          v.pre = { on: true, tag: "Safe", tagCls: "safe", conf: pre.conf, main: `<span class="pc">${pieceLetter(pre.fen, pre.move.slice(0, 2))}</span><span class="sq pmv">${pre.move.slice(0, 2)}</span>${I.arr}<span class="sq pmv">${pre.move.slice(2, 4)}</span><span class="conf">${pre.conf}%</span>` };
-        }
-      }
-    }
-    else if (st && !mineTurn && S.myTurnOnly) { v.pill = ["wait", "Their turn"]; v.label = "Opponent's move"; v.status = "Waiting for them"; }
-    else if (!resp) { v.pill = status === "err" ? ["err", "Error"] : ["busy", "Analysing"]; v.status = status === "err" ? "Engine hiccup, retrying…" : "Analysing…"; }
+        else if (!resp) { v.pill = status === "err" ? ["err", "Error"] : ["busy", "Analysing"]; v.status = status === "err" ? "Engine hiccup, retrying…" : "Analysing…"; }
     else {
       if ((S.liveEngine === "maia" || shouldHumanizeWithMaia()) && resp.final && maiaStatus === "loading") {
         v.pill = ["busy", "Thinking"];
@@ -923,7 +906,7 @@ self.BMLivePanel = () => {
     if (reviewFeature) reviewFeature.update({ mode, st, over: overNow });
     if (overNow) showGameOverAnalysis(); else if (st.full <= 1 && st.turn === "w") gameOverAnalysisShown = false;
     if (whatsNew) whatsNew.setPlaying(!!LIVE_NOW[mode.cls] && st && (st.full > 1 || st.turn === "b") && !gameIsOver(st));
-    if (status === "err" && retryAt && Date.now() > retryAt && errRuns < 6 && st.fen === lastFen) { errRuns++; retryAt = 0; status = "busy"; if (st.turn === st.me || !S.myTurnOnly) analyze(st.fen); }
+    if (status === "err" && retryAt && Date.now() > retryAt && errRuns < 6 && st.fen === lastFen) { errRuns++; retryAt = 0; status = "busy"; analyze(st.fen); }
     playerRatingsFeature.update(board, st, mode);
     if (mode.cls !== "bot") autoPlayFeature.cancel();
     if (st.fen !== lastFen) {
@@ -931,9 +914,9 @@ self.BMLivePanel = () => {
       scorePrediction(lastFen, st.fen);
       lastFen = st.fen; resp = null; myTrap = null; threat = null; clearArrows(); status = "ok"; preEpoch++;
       maiaRequest++; maiaResp = null; maiaStatus = "";
-      if (st.turn === st.me) { pre = null; status = "busy"; analyze(st.fen); }
-      else if (premoveActive()) { pre = null; runPremove(st.fen); }
-      else { pre = null; if (!S.myTurnOnly) { status = "busy"; analyze(st.fen); } else if (S.coach) oppQuick(st.fen); }
+      // Recommend the engine-best move for the side to move, regardless of whose turn it is.
+      // The only user-facing pause is the explicit Best Move power/disable control.
+      pre = null; status = "busy"; analyze(st.fen);
       compose();
     }
     const akey = stateKey(board);
@@ -1006,7 +989,7 @@ self.BMLivePanel = () => {
     wake(0); on(window, "resize", syncUI);
     const dm = mq("(prefers-color-scheme: dark)"); on(dm, "change", applyLook);
   };
-  try { chrome.storage.local.get("bmSettings", (r) => { S = { ...DEFAULTS, ...((r && r.bmSettings) || {}), myTurnOnly: true, avoidRep: true, reduceMotion: false, coach: true, voice: false }; S.maiaMaxLoss = [0, 100, 200].reduce((b, v) => Math.abs(v - S.maiaMaxLoss) < Math.abs(b - S.maiaMaxLoss) ? v : b, 100); go(); }); } catch (_) { go(); }
+  try { chrome.storage.local.get("bmSettings", (r) => { S = { ...DEFAULTS, ...((r && r.bmSettings) || {}), avoidRep: true, reduceMotion: false, coach: true, voice: false }; S.maiaMaxLoss = [0, 100, 200].reduce((b, v) => Math.abs(v - S.maiaMaxLoss) < Math.abs(b - S.maiaMaxLoss) ? v : b, 100); go(); }); } catch (_) { go(); }
   }
 
   window.__bmRestart = () => boot();

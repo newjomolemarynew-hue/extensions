@@ -30,6 +30,7 @@ jobs:
           if (/spotify|lovable\\.app/i.test(fs.readFileSync(path.join(root,'background.js'),'utf8'))) throw new Error('External integration remains in background service worker');
           const livePanel = fs.readFileSync(path.join(root,'features/live-panel.js'),'utf8');
           if (livePanel.includes('BMSpotifyWidget') || livePanel.includes('type: "warm"')) throw new Error('Removed Spotify or eager-engine code remains in live panel');
+          if (!livePanel.includes('analyze(st.fen);') || livePanel.includes('myTurnOnly: true')) throw new Error('Live best-move recommendations must run for both sides by default');
           if (fs.readFileSync(path.join(root,'content.js'),'utf8').includes('var As=500,')) throw new Error('Game observer heartbeat is not throttled');
           for (const group of manifest.content_scripts || []) for (const file of group.js || []) if (!fs.existsSync(path.join(root, file))) throw new Error('Missing content script: ' + file);
           for (const file of ['engine/stockfish.js','engine/stockfish.wasm']) if (!fs.existsSync(path.join(root,file))) throw new Error('Missing engine file: ' + file);

@@ -5,7 +5,7 @@ KnightScope V13 keeps the unified game-review flow and uses **Stockfish 19 as th
 ## Smaller package
 - Removed the PlentyChess and Stormphrax engine integrations and their large neural-network data files.
 - The Analysis Board uses Stockfish 19 only.
-- The Live Analysis tab lets you switch between Stockfish 19 move suggestions and Maia move predictions, with separate strength/level controls. Stockfish remains the position-evaluation and move-review engine when Maia is selected.
+- The Live Analysis tab recommends the engine-best move for the side currently to move — both you and your opponent — on every turn. Recommendations pause only when you explicitly turn Best Move off. You can switch between Stockfish 19 move suggestions and Maia move predictions, with separate strength/level controls. Stockfish remains the position-evaluation and move-review engine when Maia is selected.
 - The unified Analysis Board includes a visible evaluation bar beside the board, showing White's advantage and the current score.
 - Existing Chess.com tools, Best Move, game review, board customization, and the separate human-like move feature remain.
 - Stockfish is started only when analysis is requested.
