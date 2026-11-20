@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><title>Maia smoke test</title>
+<script>
+window.maiaWorker = new Worker("/features/maia-worker.js", { type: "module" });
+window.maiaPromise = new Promise((resolve, reject) => {
+  const timer = setTimeout(() => reject(new Error("Maia worker timed out")), 90000);
+  window.maiaWorker.onmessage = ({ data }) => {
+    if (data.requestId !== 1) return;
+    clearTimeout(timer);
+    if (data.type === "MAIA_ERROR") reject(new Error(data.error));
+    else resolve(data);
+  };
+  window.maiaWorker.onerror = (event) => { clearTimeout(timer); reject(new Error(event.message || "Maia worker failed")); };
+});
+window.maiaWorker.postMessage({ type: "ANALYZE", requestId: 1, fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", targetElo: 1500 });
+</script>
