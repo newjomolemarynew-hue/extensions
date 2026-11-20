@@ -16,103 +16,7 @@ const ratingCacheTtl = 12 * 60 * 60 * 1000;
 let ratingQueue = Promise.resolve();
 const ratingRequests = new Map();
 
-function toDataUrl(type, buffer) {
-  const bytes = new Uint8Array(buffer); let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-  return `data:${type};base64,${btoa(binary)}`;
-}
-// Piece skins used to be downloaded from a public catalog; that was removed in 3.4.1. Clear what older versions left behind.
-try { caches.delete("bm-skins-v1"); chrome.storage.local.remove("bmCatalogCache"); } catch (_) {}
-
-// ---- CSS fallback: insertCSS is not subject to the page's content-security policy ----
-async function setTabCss(tabId, css) {
-  const key = `bmCss:${tabId}`, prev = (await chrome.storage.session.get(key))[key];
-  if (prev) await chrome.scripting.removeCSS({ target: { tabId }, css: prev, origin: "USER" }).catch(() => {});
-  if (css) { await chrome.scripting.insertCSS({ target: { tabId }, css, origin: "USER" }); await chrome.storage.session.set({ [key]: css }); }
-  else await chrome.storage.session.remove(key);
-}
-
-
-// ---- Suggestions: POST to the feedback endpoint, with a small offline queue ----
-const SUGGESTION_URL = "https://best-move-style-atlas.lovable.app/api/public/v1/suggestions";
-const QUEUE_KEY = "bmSuggestionQueue", QUEUE_MAX = 20, SEND_GAP_MS = 20000;
-let lastSuggestionAt = 0, flushing = null;
-
-function validSuggestion(b) {
-  if (!b || typeof b !== "object") return null;
-  const user = String(b.user || "").trim().slice(0, 40), message = String(b.message || "").trim().slice(0, 2000);
-  if (!user || message.length < 5) return null;
-  const out = { user, message };
-  if (b.data && typeof b.data === "object") out.data = { category: String(b.data.category || "other").slice(0, 20), ...(b.data.selectedStyle ? { selectedStyle: String(b.data.selectedStyle).slice(0, 60) } : {}) };
-  if (b.info && typeof b.info === "object") out.info = { extensionVersion: String(b.info.extensionVersion || "").slice(0, 20), page: String(b.info.page || "").slice(0, 30) };
-  return out;
-}
-// Returns "ok", "retry" (server down / not live yet / rate limited) or "rejected" (the server refused the content).
-async function postSuggestion(body) {
-  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 12000);
-  try {
-    const res = await fetch(SUGGESTION_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctl.signal, cache: "no-store" });
-    if (res.ok) return "ok";
-    if (res.status === 400 || res.status === 413 || res.status === 422) return "rejected";
-    return "retry";
-  } catch (_) { return "retry"; } finally { clearTimeout(timer); }
-}
-async function readQueue() { const r = await chrome.storage.local.get(QUEUE_KEY); return Array.isArray(r[QUEUE_KEY]) ? r[QUEUE_KEY] : []; }
-async function enqueueSuggestion(body) {
-  const q = await readQueue(); q.push({ body, at: Date.now() });
-  await chrome.storage.local.set({ [QUEUE_KEY]: q.slice(-QUEUE_MAX) });
-}
-function flushSuggestions() {
-  if (flushing) return flushing;
-  flushing = (async () => {
-    let q = await readQueue(); if (!q.length) return 0;
-    const left = []; let sent = 0, down = false;
-    for (const item of q) {
-      if (down || Date.now() - item.at > 30 * 24 * 3600 * 1000) { if (!down) continue; left.push(item); continue; }
-      const r = await postSuggestion(item.body);
-      if (r === "ok") sent++; else if (r === "retry") { down = true; left.push(item); }
-    }
-    await chrome.storage.local.set({ [QUEUE_KEY]: left });
-    return sent;
-  })().catch(() => 0).finally(() => { flushing = null; });
-  return flushing;
-}
-async function handleSuggestion(raw) {
-  const body = validSuggestion(raw);
-  if (!body) return { ok: false, error: "Please write a few words so we know what you mean." };
-  if (Date.now() - lastSuggestionAt < 4000) return { ok: false, error: "One moment, then try again." };
-  lastSuggestionAt = Date.now();
-  const result = await postSuggestion(body);
-  if (result === "ok") { flushSuggestions(); return { ok: true }; }
-  if (result === "rejected") return { ok: false, error: "The server didn't accept that message. Try shortening it." };
-  await enqueueSuggestion(body);
-  return { ok: true, queued: true };
-}
-if (typeof setTimeout === "function") setTimeout(() => flushSuggestions(), 3000);
-
-// ---- Spotify relay ----
-async function spotifyCommand(cmd) {
-  if (!["prev", "toggle", "next"].includes(cmd)) return { error: "Unknown command" };
-  const tabs = await chrome.tabs.query({ url: "https://open.spotify.com/*" });
-  if (!tabs.length) return { error: "Open Spotify in a browser tab first" };
-  tabs.sort((a, b) => (b.audible ? 1 : 0) - (a.audible ? 1 : 0) || (b.lastAccessed || 0) - (a.lastAccessed || 0));
-  try { return (await chrome.tabs.sendMessage(tabs[0].id, { type: "bm-spotify-cmd", cmd })) || { ok: false }; }
-  catch (_) { return { error: "Reload the Spotify tab once so Best Move can control it" }; }
-}
-const artCache = new Map();
-async function spotifyArt(url) {
-  let host = ""; try { const u = new URL(url); host = u.protocol === "https:" ? u.hostname : ""; } catch (_) {}
-  if (!/(^|\.)(scdn\.co|spotifycdn\.com)$/.test(host)) return { error: "Unsupported image host" };
-  if (artCache.has(url)) return { dataUrl: artCache.get(url) };
-  const response = await fetch(url); if (!response.ok) return { error: "Image unavailable" };
-  const type = (response.headers.get("content-type") || "image/jpeg").split(";")[0];
-  const dataUrl = toDataUrl(type, await response.arrayBuffer());
-  if (artCache.size > 12) artCache.delete(artCache.keys().next().value);
-  artCache.set(url, dataUrl); return { dataUrl };
-}
-chrome.tabs.onRemoved.addListener(async () => {
-  try { if (!(await chrome.tabs.query({ url: "https://open.spotify.com/*" })).length) await chrome.storage.local.set({ bmSpotify: { active: false, ts: 0 } }); } catch (_) {}
-});
+// External Spotify and remote feedback services are disabled in this Chess.com-only build.
 
 function normalizedRating(rating) {
   return Number.isInteger(rating) && rating >= 0 ? rating : null;
@@ -168,12 +72,12 @@ async function askEngine(msg) {
   return { error: "Engine did not respond" };
 }
 
-chrome.runtime.onStartup.addListener(() => { ensureOffscreen().catch(() => {}); flushSuggestions(); });
+chrome.runtime.onStartup.addListener(() => ensureOffscreen().catch(() => {}));
 chrome.runtime.onInstalled.addListener(() => ensureOffscreen().catch(() => {}));
 
 const CONTENT_FILES = ["chess.js", "brain.js", "liquid.js", "customization/pieces.js", "customization/fx.js", "customization/board-fx.js", "customization/customization.js",
-  "features/fx-live.js", "features/spotify-widget.js", "features/board-state.js", "features/game-mode.js", "features/player-ratings.js",
-  "features/opponent-auto-config.js", "features/engine-client.js", "features/arrow-renderer.js", "features/auto-play.js", "features/panel-template.js", "features/feedback.js", "features/review-prompt.js", "features/whats-new.js", "features/live-panel.js", "content.js"];
+  "features/fx-live.js", "features/board-state.js", "features/game-mode.js", "features/player-ratings.js",
+  "features/opponent-auto-config.js", "features/engine-client.js", "features/arrow-renderer.js", "features/auto-play.js", "features/panel-template.js", "features/review-prompt.js", "features/whats-new.js", "features/live-panel.js", "content.js"];
 
 async function restartPanel(tab) {
   if (!tab || !tab.id) throw new Error("No active tab is available");
@@ -194,10 +98,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     setTabCss(tabId, msg.type === "bm-insert-css" ? String(msg.css || "").slice(0, 4_000_000) : "").then(() => sendResponse({ ok: 1 })).catch((e) => sendResponse({ error: String(e) }));
     return true;
   }
-  if (msg.type === "bm-suggestion" && !msg.target) { handleSuggestion(msg.body).then(sendResponse).catch(() => sendResponse({ ok: false, error: "Could not send. Please try again." })); return true; }
-  if (msg.type === "bm-flush-suggestions" && !msg.target) { flushSuggestions().then((n) => sendResponse({ sent: n })); return true; }
-  if (msg.type === "bm-spotify-cmd" && !msg.target) { spotifyCommand(msg.cmd).then(sendResponse); return true; }
-  if (msg.type === "bm-spotify-art" && !msg.target) { spotifyArt(String(msg.url || "")).then(sendResponse).catch((e) => sendResponse({ error: String(e) })); return true; }
   if (msg.type === "openCustomization" && !msg.target) {
     chrome.windows.create({ url: chrome.runtime.getURL("customization/index.html"), type: "popup", width: 1240, height: 900 }, (win) => {
       if (chrome.runtime.lastError) sendResponse({ error: chrome.runtime.lastError.message });

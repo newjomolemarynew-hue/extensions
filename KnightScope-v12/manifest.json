@@ -6,18 +6,13 @@
   "description": "KnightScope V12 — multi-engine Analysis Board with Stockfish 19, PlentyChess 8.0 and Stormphrax 8.0.",
   "permissions": [
     "offscreen",
-    "activeTab",
     "scripting",
     "storage",
     "windows"
   ],
   "host_permissions": [
     "https://www.chess.com/*",
-    "https://api.chess.com/*",
-    "https://open.spotify.com/*",
-    "https://*.scdn.co/*",
-    "https://*.spotifycdn.com/*",
-    "https://best-move-style-atlas.lovable.app/*"
+    "https://api.chess.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -62,7 +57,6 @@
         "customization/board-fx.js",
         "customization/customization.js",
         "features/fx-live.js",
-        "features/spotify-widget.js",
         "features/board-state.js",
         "features/auto-play.js",
         "features/game-mode.js",
@@ -71,20 +65,10 @@
         "features/engine-client.js",
         "features/arrow-renderer.js",
         "features/panel-template.js",
-        "features/feedback.js",
         "features/review-prompt.js",
         "features/whats-new.js",
         "features/live-panel.js",
         "bm-content.js"
-      ],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://open.spotify.com/*"
-      ],
-      "js": [
-        "features/spotify.js"
       ],
       "run_at": "document_idle"
     },
@@ -110,7 +94,7 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; img-src 'self' data: https://assets-themes.chess.com https://images.chesscomfiles.com; connect-src 'self' https://api.chess.com https://*.scdn.co https://*.spotifycdn.com https://best-move-style-atlas.lovable.app"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; img-src 'self' data: https://assets-themes.chess.com https://images.chesscomfiles.com; connect-src 'self' https://api.chess.com"
   },
   "homepage_url": "https://github.com/newjomolemarynew-hue/extensions"
 }

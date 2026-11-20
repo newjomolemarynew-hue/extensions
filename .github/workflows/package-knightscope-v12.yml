@@ -41,6 +41,11 @@ jobs:
           const root = 'KnightScope-v12';
           const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
           if (manifest.version !== '12.0.0') throw new Error('Unexpected manifest version');
+          const allowedHosts = ['https://www.chess.com/*','https://api.chess.com/*'];
+          if (JSON.stringify(manifest.host_permissions) !== JSON.stringify(allowedHosts)) throw new Error('Host permissions must be limited to Chess.com');
+          if (manifest.permissions.includes('activeTab')) throw new Error('activeTab grants temporary access outside Chess.com');
+          for (const group of manifest.content_scripts || []) for (const match of group.matches || []) if (match !== 'https://www.chess.com/*') throw new Error('Content script runs outside Chess.com: ' + match);
+          if (/spotify|lovable\\.app/i.test(fs.readFileSync(path.join(root,'background.js'),'utf8'))) throw new Error('External integration remains in background service worker');
           for (const group of manifest.content_scripts || []) for (const file of group.js || []) if (!fs.existsSync(path.join(root, file))) throw new Error('Missing content script: ' + file);
           for (const file of ['engine/uci-bridge.js','engine/plentychess-emscripten.js','engine/plentychess-emscripten.wasm','engine/plentychess-emscripten.data','engine/stormphrax-emscripten.js','engine/stormphrax-emscripten.wasm','engine/stormphrax-emscripten.data']) if (!fs.existsSync(path.join(root,file))) throw new Error('Missing engine file: ' + file);
           const html = fs.readFileSync(path.join(root,'analysis.html'),'utf8');
