@@ -694,7 +694,7 @@ self.BMLivePanel = () => {
   function syncUI() {
     applyLook();
     // Warn when the engine's top move is used without the human-like option, in online games or right after switching it off.
-    $("banWarn").hidden = !(S.enabled && S.liveEngine !== "maia" && !shouldHumanizeWithMaia() && (recentOff || ONLINE[mode.cls]));
+    $("banWarn").hidden = !(S.enabled && !shouldHumanizeWithMaia() && (recentOff || ONLINE[mode.cls]));
     card.classList.toggle("collapsed", !!S.collapsed);
     root.querySelectorAll("input[type=checkbox][data-key]").forEach((i) => (i.checked = i.dataset.key === "humanizeWithMaia" ? shouldHumanizeWithMaia() : !!S[i.dataset.key]));
     $("autoPlayFeatureCard").classList.toggle("active", !!S.autoPlay);

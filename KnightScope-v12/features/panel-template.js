@@ -68,7 +68,7 @@
     <div class="tab" id="tab-s">
       <div class="grp">
       <div class="gt">Play assist</div>
-      <div class="banWarn" id="banWarn" role="alert" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8 15 14H1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.4v3.4M8 11.6v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span><b>Heads up:</b> playing the engine's top move every time in online games can get your Chess.com account flagged or banned. Chess.com's fair play rules apply to you. Use Best Move for bot games, analysis and learning.</span></div>
+      <div class="banWarn" id="banWarn" role="alert" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8 15 14H1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.4v3.4M8 11.6v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span><b>Heads up:</b> using live Stockfish or Maia move suggestions in rated online games may violate Chess.com fair-play rules and risk account action. Use engine suggestions for bot games, analysis and learning.</span></div>
       <section class="c2 feature" id="humanizeFeatureCard">
         <div class="featureHead"><div><b>Human-like moves</b><small>Suggest what a real player of the opponent's level might play, instead of always the engine's top move.</small></div><label class="sw"><input type="checkbox" data-key="humanizeWithMaia"><i></i></label></div>
         <div class="featureConfig maia" id="humanizeCard" aria-live="polite">
