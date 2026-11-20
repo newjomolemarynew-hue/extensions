@@ -19,7 +19,7 @@ Upstream revisions, artifact hashes, network provenance and corresponding-source
 Torch and Maia are excluded as requested. Leela Chess Zero, Berserk, Reckless, Koivisto, Ethereal, Caissa and Viridithas are not enabled in this build; they need additional runtime integration or redistribution review and are not advertised as working engines.
 
 ## Privacy and site access
-KnightScope runs its page scripts only on `https://www.chess.com/*`. Its host permissions are limited to Chess.com (`www.chess.com` and the official `api.chess.com` endpoint used for public player ratings). It does not request access to other tabs through `activeTab`, does not inject into Spotify, and does not contact Spotify or the former external feedback service. Chess.com-hosted piece and sound assets may load from Chess.com's asset domains.
+KnightScope runs its page scripts only on `https://www.chess.com/*`. Its host permissions are limited to Chess.com (`www.chess.com` and the official `api.chess.com` endpoint used for public player ratings). It does not request access to other tabs through `activeTab`, does not inject into Spotify, and does not contact Spotify or the former external feedback service. The live Stockfish worker now starts only when an analysis request is made; the Chess.com game watcher and live-panel heartbeat have also been slowed to reduce idle CPU work. Chess.com-hosted piece and sound assets may load from Chess.com's asset domains.
 
 ## Install
 1. Download `KnightScope-v12.zip` and extract it.

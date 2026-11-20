@@ -532,20 +532,10 @@ self.BMLivePanel = () => {
   // Look & feel: saved settings only (no default skin flashes first). Effects follow the same settings.
   const fxLive = self.BMFxLive.create(getBoard);
   cleanups.push(() => fxLive.destroy());
-  let spotifyWidget = null, spotifyHost = null;
   const applyLook2 = (settings) => {
     self.BMCustomization.applyLive(settings).catch((error) => console.warn("Best Move: look not applied —", error.message));
     fxLive.apply(settings);
-    if (settings.spotify && !spotifyWidget) {
-      spotifyHost = document.createElement("div"); spotifyHost.setAttribute("data-bm-spotify", "1");
-      spotifyHost.style.cssText = "position:fixed;left:16px;bottom:16px;z-index:2147483000;all:initial;position:fixed;left:16px;bottom:16px;z-index:2147483000";
-      document.documentElement.appendChild(spotifyHost);
-      spotifyWidget = self.BMSpotifyWidget.create({ root: spotifyHost.attachShadow({ mode: "open" }), host: spotifyHost, floating: true, enabled: () => spotifyOn });
-    }
-    spotifyOn = !!settings.spotify; if (spotifyWidget) spotifyWidget.refresh();
   };
-  let spotifyOn = true;
-  cleanups.push(() => { if (spotifyWidget) spotifyWidget.destroy(); if (spotifyHost) spotifyHost.remove(); });
   self.BMCustomization.load().then(applyLook2).catch((error) => console.error(`Could not load board customization: ${error.message}`));
   cleanups.push(self.BMCustomization.watch(applyLook2));
   Object.entries(COLORS).forEach(([k, v]) => { const d = document.createElement("div"); d.className = "dot"; d.dataset.k = k; d.style.background = `rgb(${v})`; d.onclick = () => save({ color: k }); $("sw").appendChild(d); });
@@ -948,11 +938,10 @@ self.BMLivePanel = () => {
   }
   const go = () => {
     syncUI(); render();
-    try { chrome.runtime.sendMessage({ type: "warm" }, () => void chrome.runtime.lastError); } catch (_) {}
-    // Event-driven: wake on board changes (debounced), plus a 400 ms heartbeat for clocks, ratings and turn changes. Idle when the tab is hidden.
+    // Event-driven: wake on board changes (debounced), plus a 1000 ms heartbeat for clocks, ratings and turn changes. Idle when the tab is hidden.
     let tickTimer = 0;
     const wake = (delay) => { if (tickTimer || document.hidden) return; tickTimer = setTimeout(() => { tickTimer = 0; if (!document.hidden) safeTick(); }, delay); };
-    timers.push(setInterval(() => wake(0), 400));
+    timers.push(setInterval(() => wake(0), 1000));
     let obsBoard = null;
     const boardObs = new MutationObserver(() => wake(30));
     timers.push(setInterval(() => {

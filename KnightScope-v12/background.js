@@ -72,8 +72,6 @@ async function askEngine(msg) {
   return { error: "Engine did not respond" };
 }
 
-chrome.runtime.onStartup.addListener(() => ensureOffscreen().catch(() => {}));
-chrome.runtime.onInstalled.addListener(() => ensureOffscreen().catch(() => {}));
 
 const CONTENT_FILES = ["chess.js", "brain.js", "liquid.js", "customization/pieces.js", "customization/fx.js", "customization/board-fx.js", "customization/customization.js",
   "features/fx-live.js", "features/board-state.js", "features/game-mode.js", "features/player-ratings.js",
@@ -128,7 +126,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     });
     return true;
   }
-  if (msg.type === "warm" && !msg.target) { ensureOffscreen().then(() => sendResponse({ ok: 1 })).catch(() => sendResponse({ ok: 0 })); return true; }
   if (msg.target || !["analyze", "maia-analyze"].includes(msg.type)) return; // ignore internal traffic
   askEngine(msg).then(sendResponse).catch((e) => sendResponse({ error: String(e) }));
   return true;
