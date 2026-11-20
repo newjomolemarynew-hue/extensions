@@ -1,0 +1,36 @@
+{
+  "engine": "PlentyChess",
+  "version": "8.0.0",
+  "upstream": "https://github.com/Yoshie2000/PlentyChess",
+  "tag": "b-v8.0.0",
+  "commit": "50ad9f1b523063cbbbf599fe0547f42870fe2906",
+  "license": "GPL-3.0",
+  "network": {
+    "name": "0178r.bin",
+    "source": "https://github.com/Yoshie2000/PlentyNetworks/releases/download/0178r/0178r.bin",
+    "license": "GPL-3.0"
+  },
+  "browserBuild": "0x88 single-thread Emscripten",
+  "assets": [
+    {
+      "file": "plentychess-emscripten.js",
+      "bytes": 70903,
+      "sha256": "fe98220301e57b4afad6b5429001403bb46a612f74514dda44508691cc247a09"
+    },
+    {
+      "file": "plentychess-emscripten.wasm",
+      "bytes": 395075,
+      "sha256": "bc65d81536c9fe27b9b5de90c9ecc106056d3f4afba5e038f4087301a8c039e1"
+    },
+    {
+      "file": "plentychess-emscripten.data",
+      "bytes": 53111616,
+      "sha256": "5cedef19778f1bb784e181fc013543127d1fdcde227795710b1a48f6e53d79cd"
+    }
+  ],
+  "correspondingSource": {
+    "url": "https://assets.0x88.app/plentychess/plentychess-emscripten-single-thread-corresponding-source.tar.gz",
+    "bytes": 30768044,
+    "sha256": "b53391706151a91e6b492d88e261d883de5d5db41a2a2a42c6a673d846fe9a0d"
+  }
+}
