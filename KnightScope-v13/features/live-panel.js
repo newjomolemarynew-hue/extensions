@@ -44,6 +44,8 @@ self.BMLivePanel = () => {
     canAutoPlay: () => mode.cls === "bot"
   });
   const score = (l) => (l.mate != null ? (l.mate > 0 ? 10000 - l.mate : -10000 - l.mate) : l.cp ?? 0);
+  // Stockfish scores are White-relative; rank moves from the side-to-move's view.
+  const rootScore = (line, fen) => C.parseFen(fen).turn === "w" ? score(line) : -score(line);
   const NAMES = { p: "pawn", n: "knight", b: "bishop", r: "rook", q: "queen", k: "king" };
   const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
@@ -158,15 +160,15 @@ self.BMLivePanel = () => {
     seen[k] = (seen[k] || 0) + 1;
   }
   const wouldRepeat = (fen, l) => {
-    if (!S.avoidRep || !l || score(l) <= -150) return false;
+    if (!S.avoidRep || !l || rootScore(l, fen) <= -150) return false;
     const nf = C.applyMove(fen, l.move); return nf ? (seen[C.key(nf)] || 0) + 1 >= 3 : false;
   };
   function chooseMove(fen, lines) {
-    const top = Math.max(...lines.map(score));
+    const top = Math.max(...lines.map((line) => rootScore(line, fen)));
     const reps = lines.map((l) => { const nf = C.applyMove(fen, l.move); return nf ? (seen[C.key(nf)] || 0) + 1 >= 3 : false; });
     let idx = 0, swapped = false;
     if (S.avoidRep && reps[0] && top > -150) {
-      const j = lines.findIndex((l, i) => !reps[i] && score(l) >= top - 250);
+      const j = lines.findIndex((l, i) => !reps[i] && rootScore(l, fen) >= top - 250);
       if (j > 0) { idx = j; swapped = true; }
     }
     return { ordered: [lines[idx], ...lines.filter((_, i) => i !== idx)], swapped };
@@ -213,7 +215,7 @@ self.BMLivePanel = () => {
   }
   function recordEval(fen, lines) {
     if (!lines || !lines.length) return;
-    const sorted = [...lines].sort((a, z) => score(z) - score(a));
+    const sorted = [...lines].sort((a, z) => rootScore(z, fen) - rootScore(a, fen));
     evalLog.set(C.key(fen), { fen, lines: sorted, top: sorted[0] });
     judgePly(fen);
   }
@@ -263,7 +265,7 @@ self.BMLivePanel = () => {
       const out2 = B.pvOutcome(fen, top.pv, 8);
       if (last && last.mover !== st.me && last.j && ["mistake", "blunder", "miss"].includes(last.j.cls)) add("good", "win", `Their ${B.CLASSES[last.j.cls].label.toLowerCase()}`, `${last.san} gave up ${Math.round(last.j.loss)}% win chance`);
       else if (out2.delta >= 1) add("good", "win", `Wins ${B.gainText(out2.delta)}`, B.fmtLine(fen, top.pv, 5));
-      const ls = [...resp.raw].sort((a, z) => score(z) - score(a));
+      const ls = [...resp.raw].sort((a, z) => rootScore(z, fen) - rootScore(a, fen));
       if (ls.length > 1 && B.W(score(ls[0])) - B.W(score(ls[1])) >= 12) add("warn", "only", "Only move", `Every other move gives up ${Math.round(B.W(score(ls[0])) - B.W(score(ls[1])))}%+ win chance`);
       const mine = C.loosePieces(p, st.me), his = C.loosePieces(p, st.me === "w" ? "b" : "w");
       if (mine.length) add("warn", "loose", `${cap1(C.pieceName(mine[0].piece))} ${mine[0].sq} loose`, `Can be won (${B.gainText(Math.round(mine[0].win))})`);
@@ -276,10 +278,10 @@ self.BMLivePanel = () => {
     const caps = C.captures(asked); if (!caps.length) return;
     const t = await askP({ fen: asked, movetime: 180, elo: 3200, multipv: Math.min(4, caps.length), searchmoves: caps });
     if (asked !== lastFen || t.error || !t.lines) return;
-    const best = score(r.top);
+    const best = rootScore(r.top, asked);
     for (const l of t.lines) {
       if (l.move === r.move) continue;
-      const diff = best - score(l);
+      const diff = best - rootScore(l, asked);
       if (diff >= 200 && looksFree(asked, l.move)) {
         const v = pieceAt(asked, l.move.slice(2, 4));
         myTrap = { bad: l.move, loss: diff, victim: v ? C.pieceName(v) : "pawn", line: B.fmtLine(asked, l.pv, 3), lossText: lossText(asked, l.pv, diff) };
@@ -319,8 +321,8 @@ self.BMLivePanel = () => {
     if (r0.error) { if (r0.error === "nomove") pre = { fen: asked, state: "none", oppElo: elo, cands: [] }; else if (r0.error !== "superseded") { status = "err"; engineMsg = r0.error; } return; }
     recordEval(asked, r0.lines);
     const T = Math.max(55, Math.min(260, 260 - (elo - 800) * 0.095));
-    const clampS = (l) => Math.max(-1500, Math.min(1500, score(l)));
-    const sorted = [...r0.lines].sort((a, z) => score(z) - score(a)), topS = clampS(sorted[0]);
+    const clampS = (l) => Math.max(-1500, Math.min(1500, rootScore(l, asked)));
+    const sorted = [...r0.lines].sort((a, z) => rootScore(z, asked) - rootScore(a, asked)), topS = clampS(sorted[0]);
     const w = sorted.map((l) => Math.exp((clampS(l) - topS) / T)), tot = w.reduce((a, c) => a + c, 0);
     const all = sorted.map((l, i) => ({ move: l.move, p: w[i] / tot, score: score(l), pv: l.pv }));
     const keep = []; let mass = 0; for (const c of all) { keep.push(c); mass += c.p; if (mass >= 0.85 || keep.length === 3) break; }
@@ -497,7 +499,7 @@ self.BMLivePanel = () => {
     });
   }
   function onResult(asked, r, final) {
-    const top = [...r.lines].sort((a, b) => score(b) - score(a))[0];
+    const top = [...r.lines].sort((a, b) => rootScore(b, asked) - rootScore(a, asked))[0];
     const ch = chooseMove(asked, r.lines);
     if (final) prevScore = score(top);
     resp = { fen: asked, move: ch.ordered[0].move, stockfishMove: ch.ordered[0].move, lines: ch.ordered, raw: r.lines, top, swapped: ch.swapped, final, ms: r.ms };
