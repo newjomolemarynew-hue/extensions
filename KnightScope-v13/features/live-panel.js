@@ -164,14 +164,15 @@ self.BMLivePanel = () => {
     const nf = C.applyMove(fen, l.move); return nf ? (seen[C.key(nf)] || 0) + 1 >= 3 : false;
   };
   function chooseMove(fen, lines) {
-    const top = Math.max(...lines.map((line) => rootScore(line, fen)));
-    const reps = lines.map((l) => { const nf = C.applyMove(fen, l.move); return nf ? (seen[C.key(nf)] || 0) + 1 >= 3 : false; });
+    const ranked = [...lines].sort((a, b) => rootScore(b, fen) - rootScore(a, fen));
+    const top = ranked.length ? rootScore(ranked[0], fen) : -Infinity;
+    const reps = ranked.map((l) => { const nf = C.applyMove(fen, l.move); return nf ? (seen[C.key(nf)] || 0) + 1 >= 3 : false; });
     let idx = 0, swapped = false;
     if (S.avoidRep && reps[0] && top > -150) {
-      const j = lines.findIndex((l, i) => !reps[i] && rootScore(l, fen) >= top - 250);
+      const j = ranked.findIndex((l, i) => !reps[i] && rootScore(l, fen) >= top - 250);
       if (j > 0) { idx = j; swapped = true; }
     }
-    return { ordered: [lines[idx], ...lines.filter((_, i) => i !== idx)], swapped };
+    return { ordered: [ranked[idx], ...ranked.filter((_, i) => i !== idx)], swapped };
   }
 
   const arrowFeature = self.BMArrowRenderer.create(() => ({ settings: S, state: st, response: resp, premove: pre, trap: myTrap }), C, COLORS);
