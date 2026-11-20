@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require("playwright");
 
-const root = path.resolve(process.env.KNIGHTSCOPE_ROOT || "KnightScope-v20");
+const root = path.resolve(process.env.KNIGHTSCOPE_ROOT || "KnightScope-v21");
 const mime = { ".html": "text/html", ".js": "text/javascript", ".wasm": "application/wasm", ".css": "text/css" };
 if (!fs.existsSync(path.join(root, "manifest.json"))) throw new Error("KnightScope test root not found: " + root);
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
