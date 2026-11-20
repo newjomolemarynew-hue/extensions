@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths:
       - "KnightScope-v20/**"
-      - ".github/workflows/package-knightscope-v19.yml"
+      - ".github/workflows/package-knightscope-v20.yml"
   workflow_dispatch:
 permissions:
   contents: write

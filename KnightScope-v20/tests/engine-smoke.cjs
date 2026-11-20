@@ -17,9 +17,16 @@ for (const [label, check] of [
   ["both-side recommendations", livePanel.includes("analyze(st.fen);") && !livePanel.includes("myTurnOnly: true")]
 ]) if (!check) throw new Error("V20 source regression: " + label);
 const analysisSource = fs.readFileSync(path.join(root, "analysis.js"), "utf8");
-const watchCount = (analysisSource.match(/BMCustomization\\.watch\\(/g) || []).length;
+const watchCount = analysisSource.split("BMCustomization.watch(").length - 1;
 if (watchCount !== 1) throw new Error("V18 regression: Analysis Board should register exactly one customization watcher; found " + watchCount);
-console.log("V20 source checks: PASS");\nconst dashboard = fs.readFileSync(path.join(root, "dashboard.js"), "utf8");\nfor (const [label, check] of [[ "Home/End tab navigation", dashboard.includes(\x27event.key === "Home"\x27) && dashboard.includes(\x27event.key === "End"\x27) ], [ "popup error recovery", dashboard.includes("Refresh the Chess.com tab, then try again.") ], [ "review loading state", dashboard.includes(\x27setAttribute("aria-busy", "true")\x27) ]]) if (!check) throw new Error("V20 dashboard regression: " + label);\nif (fs.readFileSync(path.join(root, "dashboard.html"), "utf8").includes("auto-review")) throw new Error("Dashboard contains an inactive Automatic review toggle");
+console.log("V20 source checks: PASS");
+const dashboard = fs.readFileSync(path.join(root, "dashboard.js"), "utf8");
+for (const [label, check] of [
+  ["Home/End tab navigation", dashboard.includes('event.key === "Home"') && dashboard.includes('event.key === "End"')],
+  ["popup error recovery", dashboard.includes("Refresh the Chess.com tab, then try again.")],
+  ["review loading state", dashboard.includes('setAttribute("aria-busy", "true")')]
+]) if (!check) throw new Error("V20 dashboard regression: " + label);
+if (fs.readFileSync(path.join(root, "dashboard.html"), "utf8").includes("auto-review")) throw new Error("Dashboard contains an inactive Automatic review toggle");
 
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, "http://127.0.0.1").pathname);
