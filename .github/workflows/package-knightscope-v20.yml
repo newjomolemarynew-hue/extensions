@@ -38,7 +38,7 @@ jobs:
           if (!livePanel.includes('run(mp, false, b.quick, false)') || !livePanel.includes('run(mp, false, b.deep, true)')) throw new Error('Quick-first then deep-refinement search missing');
           if (!livePanel.includes('analyze(st.fen);') || livePanel.includes('myTurnOnly: true')) throw new Error('Live best-move recommendations must run for both sides by default');
           const analysis = fs.readFileSync(path.join(root,'analysis.js'),'utf8');
-          if ((analysis.match(/BMCustomization\\.watch\\(/g) || []).length !== 1) throw new Error('Analysis Board has duplicate customization watchers');
+          if (analysis.split('BMCustomization.watch(').length - 1 !== 1) throw new Error('Analysis Board has duplicate customization watchers');
           if (fs.readFileSync(path.join(root,'content.js'),'utf8').includes('var As=500,')) throw new Error('Game observer heartbeat is not throttled');
           for (const group of manifest.content_scripts || []) for (const file of group.js || []) if (!fs.existsSync(path.join(root, file))) throw new Error('Missing content script: ' + file);
           for (const file of ['engine/stockfish.js','engine/stockfish.wasm']) if (!fs.existsSync(path.join(root,file))) throw new Error('Missing engine file: ' + file);
