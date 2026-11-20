@@ -1,0 +1,9 @@
+{
+  "martin-bot": {
+    "isBot": true,
+    "name": "Martin-BOT",
+    "rating": 250,
+    "source": "User-provided example; Chess.com PubAPI stats do not expose a game rating",
+    "sourceUrl": "https://api.chess.com/pub/player/martin-bot/stats"
+  }
+}
