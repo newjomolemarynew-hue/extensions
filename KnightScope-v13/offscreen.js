@@ -3,26 +3,40 @@ let maiaWorker = null;
 let maiaRequestId = 0;
 const maiaResponses = new Map();
 let busy = false, current = null, queued = null, timer = null;
+let engineReady = false, bootTimer = null;
 let lines = {};
 let curMultiPV = 0, curElo = -1;
 
 let crashes = 0, lastBoot = 0, watchdog = null;
-function restart() {                                   // self-heal: a crashed WebAssembly engine is replaced, the pending request is simply dropped
+function restart() {
   try { worker && worker.terminate(); } catch (_) {}
-  const c = current, q = queued; busy = false; current = null; queued = null; curMultiPV = 0; curElo = -1; clearTimeout(timer);
+  const c = current, q = queued; busy = false; current = null; queued = null; engineReady = false;
+  curMultiPV = 0; curElo = -1; clearTimeout(timer); clearTimeout(bootTimer);
   if (c) c.respond({ error: "superseded" }); if (q) q.respond({ error: "superseded" });
   setTimeout(boot, 50);
 }
 // last resort: a search that ignores "stop" means the WebAssembly engine is wedged, so replace it
 function arm(ms) { clearTimeout(watchdog); watchdog = setTimeout(() => { if (busy) restart(); }, ms); }
 function boot() {
-  lastBoot = Date.now(); engineError = null;
-  try { worker = new Worker("engine/stockfish.js"); } catch (e) { engineError = String(e); return; }
-  worker.onerror = (e) => { if (++crashes > 6) { engineError = (e && e.message) || "Engine crashed"; if (current) finish(null, engineError); } else restart(); };
+  lastBoot = Date.now(); engineError = null; engineReady = false;
+  clearTimeout(bootTimer);
+  try { worker = new Worker(chrome.runtime.getURL("engine/stockfish.js")); }
+  catch (e) { engineError = "Could not start Stockfish: " + String(e); return; }
+  worker.onerror = (e) => {
+    const message = (e && e.message) || "Stockfish worker crashed";
+    if (++crashes > 6) {
+      engineError = message;
+      if (current) finish(null, engineError);
+      if (queued) { queued.respond({ error: engineError }); queued = null; }
+    } else restart();
+  };
   worker.onmessage = onLine;
+  bootTimer = setTimeout(() => {
+    if (engineReady) return;
+    engineError = "Stockfish did not finish starting (UCI handshake timeout)";
+    if (queued) { queued.respond({ error: engineError }); queued = null; }
+  }, 15000);
   worker.postMessage("uci");
-  worker.postMessage("setoption name Hash value 64");
-  worker.postMessage("isready");
 }
 const send = (c) => worker.postMessage(c);
 
@@ -54,6 +68,16 @@ function finish(result, error) {
 
 function onLine(e) {
   const line = typeof e.data === "string" ? e.data : "";
+  if (line === "uciok") {
+    worker.postMessage("setoption name Hash value 64");
+    worker.postMessage("isready");
+    return;
+  }
+  if (line === "readyok") {
+    engineReady = true; engineError = null; clearTimeout(bootTimer);
+    if (!busy && queued) { const next = queued; queued = null; start(next); }
+    return;
+  }
   if (!current) return;
   if (line.startsWith("info") && line.includes(" pv ")) {
     if (/ (lower|upper)bound/.test(line)) return;          // only trust exact scores
@@ -118,6 +142,12 @@ chrome.runtime.onMessage.addListener((msg, _s, sendResponse) => {
     if (engineError) { sendResponse({ error: engineError }); return; }
   }
   const req = { fen: msg.fen, movetime: msg.movetime, elo: msg.elo, multipv: msg.multipv, searchmoves: msg.searchmoves, respond: sendResponse };
+  if (!engineReady) {
+    if (queued) queued.respond({ error: "superseded" });
+    queued = req;
+    if (engineError) { req.respond({ error: engineError }); queued = null; }
+    return true;
+  }
   if (busy) {
     if (queued) queued.respond({ error: "superseded" });
     queued = req;
