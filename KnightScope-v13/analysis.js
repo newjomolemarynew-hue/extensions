@@ -521,7 +521,8 @@
   }
   $("cFirst").onclick = () => go(0); $("cPrev").onclick = () => go(S.cur - 1); $("cNext").onclick = () => go(S.cur + 1); $("cLast").onclick = () => go(S.plies.length);
   $("studyStart").onclick = () => { beginStudy(); };
-  $("cFlip").onclick = () => { S.flip = !S.flip; renderBars(); renderBoard(); renderEvalBar(); };\n  $("board").addEventListener("click", handleStudyBoardClick);
+  $("cFlip").onclick = () => { S.flip = !S.flip; renderBars(); renderBoard(); renderEvalBar(); };
+  $("board").addEventListener("click", handleStudyBoardClick);
   $("moves").addEventListener("click", (e) => { const b = e.target.closest("[data-i]"); if (b) go(+b.dataset.i); });
   $("chart").addEventListener("click", (e) => { const r = $("chart").getBoundingClientRect(); go(Math.round(((e.clientX - r.left) / r.width) * (S.fens.length - 1))); });
   $("engineSelect").addEventListener("change", (e) => { const next=e.target.value, meta=ENGINE_META[next]; if(!meta||!meta.bundled){e.target.value=S.engine;return;} S.engine=next; sset({bmAnalysisEngine:S.engine}); if(S.plies.length){S.token++;if(eng){eng.stop();eng.dispose();eng=null;}S.A=[];S.R=[];S.summary=null;runAnalysis();} });
