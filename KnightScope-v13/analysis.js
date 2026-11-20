@@ -520,6 +520,7 @@
 
   }
   $("cFirst").onclick = () => go(0); $("cPrev").onclick = () => go(S.cur - 1); $("cNext").onclick = () => go(S.cur + 1); $("cLast").onclick = () => go(S.plies.length);
+  $("studyStart").onclick = () => { beginStudy(); };
   $("cFlip").onclick = () => { S.flip = !S.flip; renderBars(); renderBoard(); renderEvalBar(); };\n  $("board").addEventListener("click", handleStudyBoardClick);
   $("moves").addEventListener("click", (e) => { const b = e.target.closest("[data-i]"); if (b) go(+b.dataset.i); });
   $("chart").addEventListener("click", (e) => { const r = $("chart").getBoundingClientRect(); go(Math.round(((e.clientX - r.left) / r.width) * (S.fens.length - 1))); });
