@@ -16,7 +16,7 @@ const ratingCacheTtl = 12 * 60 * 60 * 1000;
 let ratingQueue = Promise.resolve();
 const ratingRequests = new Map();
 
-// External Spotify and remote feedback services are disabled in this Chess.com-only build.
+// Optional integrations are disabled in this Chess.com-only build.
 
 function normalizedRating(rating) {
   return Number.isInteger(rating) && rating >= 0 ? rating : null;
