@@ -1,0 +1,36 @@
+{
+  "engine": "Stormphrax",
+  "version": "8.0.0",
+  "upstream": "https://github.com/Ciekce/Stormphrax",
+  "tag": "v8.0.0",
+  "commit": "582965517ed2032d41a6b4cd6c2e66b1b934e2ad",
+  "license": "GPL-3.0-or-later",
+  "network": {
+    "name": "undertown.nnue",
+    "source": "https://github.com/Ciekce/stormphrax-nets/releases/download/undertown/undertown.nnue",
+    "provenance": "Upstream release network; source archive includes the exact build inputs."
+  },
+  "browserBuild": "0x88 single-thread Emscripten",
+  "assets": [
+    {
+      "file": "stormphrax-emscripten.js",
+      "bytes": 70611,
+      "sha256": "4c95a359f1c09760611d09ea6a3fa4a451407c699d14ef559940d37365a4bfec"
+    },
+    {
+      "file": "stormphrax-emscripten.wasm",
+      "bytes": 697070,
+      "sha256": "0db54ba63defc45c55208545b6507f64bc9d277e47d3c4203e8070d9c7b1b294"
+    },
+    {
+      "file": "stormphrax-emscripten.data",
+      "bytes": 55914848,
+      "sha256": "04d651e078b7c7334709dbd772d40a23c0a5480e93e19521a03020c7d633f2cf"
+    }
+  ],
+  "correspondingSource": {
+    "url": "https://assets.0x88.app/stormphrax/stormphrax-emscripten-single-thread-corresponding-source.tar.gz",
+    "bytes": 37267795,
+    "sha256": "f6e043ae1f7dcef7f798f71614abb8cca2a272a6a3acb86a9b26fe7bc7d1252a"
+  }
+}
