@@ -17,7 +17,7 @@ function restart() {                                   // self-heal: a crashed W
 function arm(ms) { clearTimeout(watchdog); watchdog = setTimeout(() => { if (busy) restart(); }, ms); }
 function boot() {
   lastBoot = Date.now(); engineError = null;
-  try { worker = new Worker("bm-engine/stockfish.js"); } catch (e) { engineError = String(e); return; }
+  try { worker = new Worker("engine/stockfish.js"); } catch (e) { engineError = String(e); return; }
   worker.onerror = (e) => { if (++crashes > 6) { engineError = (e && e.message) || "Engine crashed"; if (current) finish(null, engineError); } else restart(); };
   worker.onmessage = onLine;
   worker.postMessage("uci");
