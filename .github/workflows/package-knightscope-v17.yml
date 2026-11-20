@@ -1,0 +1,87 @@
+name: Package KnightScope V17
+on:
+  push:
+    branches: [main]
+    paths:
+      - "KnightScope-v17/**"
+      - ".github/workflows/package-knightscope-v17.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate manifest, assets and JavaScript
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = 'KnightScope-v17';
+          const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+          if (manifest.version !== '17.0.0') throw new Error('Unexpected manifest version');
+          const allowedHosts = ['https://www.chess.com/*','https://api.chess.com/*'];
+          if (JSON.stringify(manifest.host_permissions) !== JSON.stringify(allowedHosts)) throw new Error('Host permissions must be limited to Chess.com');
+          if (manifest.permissions.includes('activeTab')) throw new Error('activeTab grants temporary access outside Chess.com');
+          for (const group of manifest.content_scripts || []) for (const match of group.matches || []) if (match !== 'https://www.chess.com/*') throw new Error('Content script runs outside Chess.com: ' + match);
+          if (/spotify|lovable\\.app/i.test(fs.readFileSync(path.join(root,'background.js'),'utf8'))) throw new Error('External integration remains in background service worker');
+          const livePanel = fs.readFileSync(path.join(root,'features/live-panel.js'),'utf8');
+          if (livePanel.includes('BMSpotifyWidget') || livePanel.includes('type: "warm"')) throw new Error('Removed Spotify or eager-engine code remains in live panel');
+          const panelTemplate = fs.readFileSync(path.join(root,'features/panel-template.js'),'utf8');
+          for (const id of ['liveMaiaElo','liveEngineElo','maiaElo','elo']) if (!panelTemplate.includes('type="number" id="'+id+'" min="100" max="3200"')) throw new Error('Missing 100–3200 numeric input: '+id);
+          if (!livePanel.includes('Math.max(100, Math.min(3200, Math.round(parsed)))')) throw new Error('Numeric Elo input validation missing');
+          if (!livePanel.includes('const on = (t, e, f, options) =>') || !livePanel.includes('on(window, "keydown", toggleBestMove, true);')) throw new Error('Alt+B capture-mode registration missing');
+          if (!livePanel.includes('if (e.repeat || !e.altKey')) throw new Error('Alt+B key-repeat guard missing');
+          if (!livePanel.includes('run(mp, false, b.quick, false)') || !livePanel.includes('run(mp, false, b.deep, true)')) throw new Error('Quick-first then deep-refinement search missing');
+          if (!livePanel.includes('analyze(st.fen);') || livePanel.includes('myTurnOnly: true')) throw new Error('Live best-move recommendations must run for both sides by default');
+          if (fs.readFileSync(path.join(root,'content.js'),'utf8').includes('var As=500,')) throw new Error('Game observer heartbeat is not throttled');
+          for (const group of manifest.content_scripts || []) for (const file of group.js || []) if (!fs.existsSync(path.join(root, file))) throw new Error('Missing content script: ' + file);
+          for (const file of ['engine/stockfish.js','engine/stockfish.wasm']) if (!fs.existsSync(path.join(root,file))) throw new Error('Missing engine file: ' + file);
+          const offscreen = fs.readFileSync(path.join(root,'offscreen.js'),'utf8');
+          if (!offscreen.includes('chrome.runtime.getURL("engine/stockfish.js")')) throw new Error('Offscreen Stockfish worker path does not match packaged engine directory');
+          const html = fs.readFileSync(path.join(root,'analysis.html'),'utf8');
+          for (const id of ['stockfish']) if (!html.includes('value="'+id+'"')) throw new Error('Missing engine selector option: '+id);
+          console.log('Manifest and engine assets validated:', manifest.version);
+          NODE
+          find KnightScope-v17 -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Run real-browser engine smoke tests
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium
+          node KnightScope-v17/tests/engine-smoke.cjs
+          grep -q liveEngineSelect KnightScope-v17/features/panel-template.js
+          grep -q evbar KnightScope-v17/analysis.html
+          grep -q predictWithMaia KnightScope-v17/features/live-panel.js
+          grep -q 'studyBest' KnightScope-v17/analysis.js
+          grep -q 'handleStudyBoardClick' KnightScope-v17/analysis.js
+          grep -q 'data-square' KnightScope-v17/analysis.js
+      - name: Build and validate ZIP
+        run: |
+          rm -f KnightScope-v17.zip
+          cd KnightScope-v17
+          zip -qr ../KnightScope-v17.zip .
+          cd ..
+          unzip -t KnightScope-v17.zip
+          size=$(stat -c%s KnightScope-v17.zip)
+          echo "ZIP size: $size bytes"
+          test "$size" -lt 95000000 || { echo 'ZIP exceeds GitHub repository file-size limit'; exit 1; }
+      - name: Upload V17 ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KnightScope-v17
+          path: KnightScope-v17.zip
+          if-no-files-found: error
+          retention-days: 30
+      - name: Commit V17 ZIP
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --soft origin/main
+          git add KnightScope-v17.zip
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Build KnightScope V17 package"
+          git push origin HEAD:main
