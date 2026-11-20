@@ -45,6 +45,7 @@ jobs:
           node KnightScope-v12/tests/engine-smoke.cjs
       - name: Build and validate ZIP
         run: |
+          rm -f KnightScope-v12.zip
           cd KnightScope-v12
           zip -qr ../KnightScope-v12.zip .
           cd ..
