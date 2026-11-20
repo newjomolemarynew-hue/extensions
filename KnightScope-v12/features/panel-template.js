@@ -46,11 +46,14 @@
 
     <div class="tab" id="tab-r">
       <section class="c2 liveEngine">
-        <div class="liveEngineHead"><div><span class="engineEyebrow">LIVE ENGINE</span><b>Stockfish 19</b><small>Active engine · local browser analysis</small></div><span class="engineState" id="revEngineState">Waiting</span></div>
+        <div class="liveEngineHead"><div><span class="engineEyebrow">LIVE ENGINE</span><b id="liveEngineName">Stockfish 19</b><small id="liveEngineDesc">Local Stockfish analysis</small></div><span class="engineState" id="revEngineState">Waiting</span></div>
+        <div class="engineControls engineCustom"><div class="engineControl"><span>Engine</span><select id="liveEngineSelect" class="liveEngineSelect"><option value="stockfish">Stockfish 19</option><option value="maia">Maia</option></select></div>
+        <div class="engineControl" id="liveMaiaLevelRow"><span>Maia level</span><div class="engineRange"><input type="range" id="liveMaiaElo" min="1100" max="1900" step="50" value="1500"><b id="liveMaiaEloLabel">1500</b></div></div>
+        <div class="engineControl"><span>Stockfish strength</span><div class="engineRange"><input type="range" id="liveEngineElo" min="1320" max="3200" step="10" value="3200"><b id="liveEngineEloLabel">Max</b></div></div></div>
         <div class="engineMetrics"><div><span>Depth</span><b id="revDepth">—</b></div><div><span>Time</span><b id="revTime">—</b></div><div><span>Lines</span><b id="revLines">—</b></div></div>
         <div class="engineControls"><div class="engineControl"><span>Thinking</span><div class="seg" data-key="speed"><i class="th"></i><button data-v="turbo">Fast</button><button data-v="auto">Auto</button><button data-v="deep">Deep</button></div></div>
         <div class="engineControl"><span>Variations</span><div class="seg" data-key="lines"><i class="th"></i><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div></div>
-        <div class="engineFoot">Stockfish 19 is the only standalone live-analysis engine currently bundled. Other engines will appear here only after their browser packages are integrated.</div>
+        <div class="engineFoot">Maia predicts likely moves from its player model. Stockfish supplies the separate position evaluation and move-review scores.</div>
       </section>
       <section class="c2 revsum" id="revSum"></section>
       <div class="grp" style="margin-top:12px"><div class="gt">Recent moves</div><div class="c2 revmoves" id="revMoves"></div></div>

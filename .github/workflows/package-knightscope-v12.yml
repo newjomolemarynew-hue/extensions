@@ -38,11 +38,14 @@ jobs:
           console.log('Manifest and engine assets validated:', manifest.version);
           NODE
           find KnightScope-v12 -type f -name '*.js' -print0 | xargs -0 -n1 node --check
-      - name: Run real-browser UCI smoke tests
+      - name: Run real-browser engine smoke tests
         run: |
           npm install --no-save playwright@1.55.0
           npx playwright install chromium
           node KnightScope-v12/tests/engine-smoke.cjs
+          grep -q liveEngineSelect KnightScope-v12/features/panel-template.js
+          grep -q evbar KnightScope-v12/analysis.html
+          grep -q predictWithMaia KnightScope-v12/features/live-panel.js
       - name: Build and validate ZIP
         run: |
           rm -f KnightScope-v12.zip

@@ -10,7 +10,7 @@ self.BMLivePanel = () => {
   const DEFAULTS = { enabled: true, elo: 3200, speed: "auto", lines: 1, color: "blue", myTurnOnly: true, peek: false, collapsed: false, corner: "br",
                      avoidRep: true, coach: true, voice: false, glass: 55, style: "regular", theme: "dark", reduceMotion: false,
                      premove: "auto", oppMode: "auto", oppElo: 1500, autoPlay: false,
-                     autoOpponent: true,
+                     autoOpponent: true, liveEngine: "stockfish",
                      humanizeWithMaia: false, maiaRatingMode: "auto", maiaElo: 1500, maiaMaxLoss: 100 };
   const MAIA_MODELS = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900];
   const maiaModelElo = (target) => Number.isFinite(target)
@@ -18,7 +18,7 @@ self.BMLivePanel = () => {
     : null;
   const CUSTOM_DEFAULTS = self.BMCustomization.DEFAULTS;
   const COLORS = { blue: "10,132,255", green: "48,209,88", orange: "255,159,10", pink: "255,55,95", purple: "191,90,242" };
-  const ANALYSIS_KEYS = ["elo", "speed", "lines", "avoidRep", "myTurnOnly", "enabled", "premove", "oppMode", "oppElo", "autoOpponent"];
+  const ANALYSIS_KEYS = ["elo", "speed", "lines", "avoidRep", "myTurnOnly", "enabled", "premove", "oppMode", "oppElo", "autoOpponent", "liveEngine"];
   let S = { ...DEFAULTS };
   let retryAt = 0, errRuns = 0, lastFen = "", resp = null, maiaResp = null, maiaStatus = "", maiaRequest = 0, peekHeld = false, status = "init", engineMsg = "";
   let seen = {}, lastHistFen = null, lastFull = 0, prevScore = null, st = null, insKey = "";
@@ -381,7 +381,7 @@ self.BMLivePanel = () => {
   function analyze(asked) {           // a single search: the arrow appears once and never switches
     const automatic = autoOpponentConfig();
     const b = budget(), t0 = performance.now();
-    const mp = automatic.active ? automatic.multipv : shouldHumanizeWithMaia() ? 4 : Math.max(2, S.lines);
+    const mp = S.liveEngine === "maia" ? Math.max(1, S.lines) : automatic.active ? automatic.multipv : shouldHumanizeWithMaia() ? 4 : Math.max(2, S.lines);
     const fail = (r) => { if (r.error === "superseded") return true; if (r.error === "nomove") { status = "over"; return true; } if (r.error) { status = "err"; engineMsg = r.error; retryAt = Date.now() + 1500 * (1 + errRuns); return true; } errRuns = 0; return false; };
     const run = (n, isRetry) => ask({ fen: asked, movetime: b.deep, elo: automatic.active ? automatic.engineElo : S.elo, multipv: n }, (r) => {
       if (asked !== lastFen) return;
@@ -391,6 +391,36 @@ self.BMLivePanel = () => {
       onResult(asked, r, true);
     });
     run(mp, false);
+  }
+  function predictWithMaia(asked, stockfishResp) {
+    const request = ++maiaRequest;
+    const rating = effectiveMaiaElo() ?? 1500;
+    const stockfishMove = stockfishResp.stockfishMove || stockfishResp.move;
+    stockfishResp.stockfishMove = stockfishMove;
+    stockfishResp.move = stockfishMove;
+    stockfishResp.humanized = false;
+    stockfishResp.maiaMode = true;
+    maiaResp = null;
+    maiaStatus = "loading";
+    compose();
+    askP({ type: "maia-analyze", fen: asked, targetElo: rating }).then((result) => {
+      if (request !== maiaRequest || resp !== stockfishResp || asked !== lastFen || S.liveEngine !== "maia") return;
+      if (!result || result.error || !result.move) {
+        maiaStatus = result?.error || "Maia could not find a move.";
+        stockfishResp.move = stockfishMove;
+        stockfishResp.humanized = false;
+        stockfishResp.maiaMode = false;
+      } else {
+        maiaResp = result;
+        maiaStatus = "ready";
+        stockfishResp.move = result.move;
+        stockfishResp.humanized = true;
+        stockfishResp.humanProbability = result.moves?.[0]?.probability ?? null;
+        stockfishResp.humanCandidateCount = result.moves?.length ?? 0;
+        if (S.autoPlay) autoPlayFeature.play(stockfishResp.move, asked);
+      }
+      compose();
+    });
   }
   function humanizeMove(asked, stockfishResp) {
     const request = ++maiaRequest;
@@ -472,7 +502,8 @@ self.BMLivePanel = () => {
     if (final) prevScore = score(top);
     resp = { fen: asked, move: ch.ordered[0].move, stockfishMove: ch.ordered[0].move, lines: ch.ordered, raw: r.lines, top, swapped: ch.swapped, final, ms: r.ms };
     status = "ok";
-    if (final && shouldHumanizeWithMaia()) humanizeMove(asked, resp);
+    if (final && S.liveEngine === "maia") predictWithMaia(asked, resp);
+    else if (final && shouldHumanizeWithMaia()) humanizeMove(asked, resp);
     else if (final) autoPlayFeature.play(resp.move, asked);
     if (final) recordEval(asked, r.lines);
     compose();
@@ -550,6 +581,9 @@ self.BMLivePanel = () => {
   $("glass").oninput = (e) => save({ glass: +e.target.value });
   $("oppE").oninput = (e) => save({ oppElo: +e.target.value, oppMode: "manual" });
   $("maiaElo").oninput = (e) => save({ maiaElo: +e.target.value, maiaRatingMode: "manual" });
+   $("liveEngineSelect").onchange = (e) => save({ liveEngine: e.target.value === "maia" ? "maia" : "stockfish" });
+   $("liveMaiaElo").oninput = (e) => save({ maiaElo: +e.target.value, maiaRatingMode: "manual" });
+   $("liveEngineElo").oninput = (e) => save({ elo: +e.target.value });
   
   $("min").onclick = () => save({ collapsed: !S.collapsed });
   $("closePanel").onclick = () => {
@@ -600,14 +634,16 @@ self.BMLivePanel = () => {
     const keys = Object.keys(patch);
     S = { ...S, ...patch };
     clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { chrome.storage.local.set({ bmSettings: S }); } catch (_) {} }, 160);
+    if (keys.includes("liveEngine")) { maiaRequest++; maiaResp = null; maiaStatus = ""; resp = null; status = "init"; }
+    if (S.liveEngine === "maia" && keys.some((key) => ["maiaElo", "maiaRatingMode", "autoOpponent"].includes(key))) { maiaRequest++; maiaResp = null; maiaStatus = ""; lastFen = ""; }
     if (keys.includes("autoPlay") && S.autoPlay && resp && resp.final && st && st.turn === st.me &&
-        (!shouldHumanizeWithMaia() || maiaStatus !== "loading")) {
+        (!(S.liveEngine === "maia" || shouldHumanizeWithMaia()) || maiaStatus !== "loading")) {
       autoPlayFeature.play(resp.move, resp.fen);
     }
     if (keys.includes("autoPlay") && !S.autoPlay || keys.includes("enabled") && !S.enabled) autoPlayFeature.cancel();
     if (quiet) return;
     if (keys.includes("humanizeWithMaia")) {
-      if (shouldHumanizeWithMaia() && resp && resp.final) {
+      if (S.liveEngine !== "maia" && shouldHumanizeWithMaia() && resp && resp.final) {
         autoPlayFeature.cancel();
         humanizeMove(lastFen, resp);
       } else {
@@ -626,7 +662,7 @@ self.BMLivePanel = () => {
       maiaRequest++;
       maiaResp = null;
       maiaStatus = "";
-      if (shouldHumanizeWithMaia() && resp && resp.final && !keys.includes("autoOpponent")) {
+      if (S.liveEngine !== "maia" && shouldHumanizeWithMaia() && resp && resp.final && !keys.includes("autoOpponent")) {
         autoPlayFeature.cancel();
         humanizeMove(lastFen, resp);
       } else if (resp && resp.stockfishMove) {
@@ -636,7 +672,7 @@ self.BMLivePanel = () => {
       }
     }
     if (keys.some((k) => ANALYSIS_KEYS.includes(k))) { lastFen = ""; insKey = ""; }
-    if (keys.includes("color") || keys.includes("lines")) clearArrows();
+    if (keys.includes("color") || keys.includes("lines") || keys.includes("liveEngine")) clearArrows();
     syncUI();
   }
   const mq = (q) => { try { return matchMedia(q); } catch (_) { return { matches: false, addEventListener() {}, removeEventListener() {} }; } };
@@ -658,18 +694,27 @@ self.BMLivePanel = () => {
   function syncUI() {
     applyLook();
     // Warn when the engine's top move is used without the human-like option, in online games or right after switching it off.
-    $("banWarn").hidden = !(S.enabled && !shouldHumanizeWithMaia() && (recentOff || ONLINE[mode.cls]));
+    $("banWarn").hidden = !(S.enabled && S.liveEngine !== "maia" && !shouldHumanizeWithMaia() && (recentOff || ONLINE[mode.cls]));
     card.classList.toggle("collapsed", !!S.collapsed);
     root.querySelectorAll("input[type=checkbox][data-key]").forEach((i) => (i.checked = i.dataset.key === "humanizeWithMaia" ? shouldHumanizeWithMaia() : !!S[i.dataset.key]));
     $("autoPlayFeatureCard").classList.toggle("active", !!S.autoPlay);
     $("autoOpponentFeatureCard").classList.toggle("active", !!S.autoOpponent);
     const automatic = autoOpponentConfig();
-    $("humanizeFeatureCard").classList.toggle("active", !!S.humanizeWithMaia || (automatic.active && automatic.maiaElo != null));
+    $("humanizeFeatureCard").classList.toggle("active", !!S.humanizeWithMaia || S.liveEngine === "maia" || (automatic.active && automatic.maiaElo != null));
     root.querySelectorAll(".seg[data-key]").forEach((g) => {
       const bs = [...g.querySelectorAll("button")]; let idx = bs.findIndex((b) => b.dataset.v === String(S[g.dataset.key])); if (idx < 0) idx = 0;
       bs.forEach((b, i) => b.classList.toggle("on", i === idx)); g.style.setProperty("--n", bs.length); g.style.setProperty("--i", idx);
     });
     $("elo").value = S.elo;
+    $("liveEngineSelect").value = S.liveEngine === "maia" ? "maia" : "stockfish";
+    $("liveEngineName").textContent = S.liveEngine === "maia" ? "Maia" : "Stockfish 19";
+    $("liveEngineDesc").textContent = S.liveEngine === "maia" ? "Maia move prediction · Stockfish evaluation" : "Local Stockfish analysis";
+    $("liveMaiaLevelRow").hidden = S.liveEngine !== "maia";
+    $("liveMaiaElo").value = Math.max(1100, Math.min(1900, S.maiaElo));
+    $("liveMaiaElo").disabled = automatic.active;
+    $("liveMaiaEloLabel").textContent = automatic.active && automatic.maiaElo != null ? `Bot ${automatic.maiaElo}` : S.maiaRatingMode === "auto" && maiaElo() != null ? `Opponent ${maiaElo()}` : String(Math.max(1100, Math.min(1900, S.maiaElo)));
+    $("liveEngineElo").value = S.elo;
+    $("liveEngineEloLabel").textContent = S.elo >= 3200 ? "Max" : String(S.elo);
     $("elo").disabled = automatic.active;
     $("eloL").textContent = automatic.active ? "Set automatically" : S.elo >= 3200 ? "Maximum" : "Elo " + S.elo;
     $("elo").style.setProperty("--p", ((S.elo - 1320) / (3200 - 1320)) * 100 + "%");
@@ -758,23 +803,25 @@ self.BMLivePanel = () => {
     else if (st && !mineTurn && S.myTurnOnly) { v.pill = ["wait", "Their turn"]; v.label = "Opponent's move"; v.status = "Waiting for them"; }
     else if (!resp) { v.pill = status === "err" ? ["err", "Error"] : ["busy", "Analysing"]; v.status = status === "err" ? "Engine hiccup, retrying…" : "Analysing…"; }
     else {
-      if (shouldHumanizeWithMaia() && resp.final && maiaStatus === "loading") {
+      if ((S.liveEngine === "maia" || shouldHumanizeWithMaia()) && resp.final && maiaStatus === "loading") {
         v.pill = ["busy", "Thinking"];
-        v.label = "Human-like move";
-        v.status = "Finding a human-like move…";
+        v.label = S.liveEngine === "maia" ? "Maia prediction" : "Human-like move";
+        v.status = S.liveEngine === "maia" ? "Maia is analysing this position…" : "Finding a human-like move…";
       } else {
         v.pill = resp.final ? ["", "Ready"] : ["busy", "Refining"];
-        v.status = (S.peek ? "Arrows hidden · hold Alt+A" : resp.humanized ? "Human-like pick" : "Engine's best") +
+        v.status = (S.peek ? "Arrows hidden · hold Alt+A" : resp.maiaMode ? "Maia prediction · Stockfish evaluation" : resp.humanized ? "Human-like pick" : "Stockfish best move") +
           (resp.swapped ? " · avoiding repetition" : st && !st.real ? " · read from board" : "");
-        if (resp.humanized) v.label = "Human-like move";
+        if (resp.humanized) v.label = resp.maiaMode ? "Maia predicted move" : "Human-like move";
         v.pc = pieceLetter(resp.fen, resp.move.slice(0, 2)); v.m1 = resp.move.slice(0, 2); v.m2 = resp.move.slice(2, 4); v.promo = resp.move[4] ? "=" + resp.move[4].toUpperCase() : ""; v.san = B.sanOf(resp.fen, resp.move);
         const selectedLine = resp.lines.find((line) => line.move === resp.move) || resp.lines[0];
         const displayedLine = resp.humanized ? selectedLine : resp.top;
         v.ev = fmtEval(displayedLine, st.turn); v.depth = displayedLine.depth; v.ms = resp.ms ? (resp.ms < 1000 ? resp.ms + " ms" : (resp.ms / 1000).toFixed(1) + " s") : "—";
         const mine = score(displayedLine); v.wMe = winPct(mine); v.evCls = mine > 80 ? "good" : mine < -80 ? "bad" : "";
-        const pv = selectedLine.pv, f2 = pv && pv[1] ? C.applyMove(resp.fen, resp.move) : null;
-        if (f2) v.rows += row("var(--ex)", mvTxt(f2, pv[1]), `<span class="lab">Expected reply</span>`, "");
-        v.lines = resp.lines.slice(0, S.lines).map((l, i) => `<div class="ln c2"><em>${i + 1}</em><b>${mvTxt(resp.fen, l.move)}</b><small>${B.lineSan(resp.fen, l.pv, 4).slice(1).join(" ")}</small><span>${fmtEval(l, st.turn)}</span></div>`).join("");
+        const pv = selectedLine.pv, f2 = !resp.maiaMode && pv && pv[1] ? C.applyMove(resp.fen, resp.move) : null;
+         if (f2) v.rows += row("var(--ex)", mvTxt(f2, pv[1]), `<span class="lab">Expected reply</span>`, "");
+         v.lines = resp.maiaMode && maiaResp?.moves
+           ? maiaResp.moves.slice(0, S.lines).map((m, i) => `<div class="ln c2"><em>${i + 1}</em><b>${esc(m.san || B.sanOf(resp.fen, m.uci))}</b><small>Maia move prediction</small><span>${(m.probability * 100).toFixed(1)}%</span></div>`).join("")
+           : resp.lines.slice(0, S.lines).map((l, i) => `<div class="ln c2"><em>${i + 1}</em><b>${mvTxt(resp.fen, l.move)}</b><small>${B.lineSan(resp.fen, l.pv, 4).slice(1).join(" ")}</small><span>${fmtEval(l, st.turn)}</span></div>`).join("");
       }
     }
     if (st && S.enabled && board) {
@@ -803,10 +850,10 @@ self.BMLivePanel = () => {
     $("wfill").style.width = (v.wMe == null ? 50 : v.wMe) + "%"; $("wMe").textContent = v.wMe == null ? "—" : v.wMe + "%"; $("wOpp").textContent = v.wMe == null ? "—" : 100 - v.wMe + "%";
     $("lm").innerHTML = v.lm;
     const automatic = autoOpponentConfig();
-    const maiaEnabled = shouldHumanizeWithMaia();
+    const maiaEnabled = S.liveEngine === "maia" || shouldHumanizeWithMaia();
     $("autoPlayFeatureCard").classList.toggle("active", !!S.autoPlay);
     $("autoOpponentFeatureCard").classList.toggle("active", !!S.autoOpponent);
-    $("humanizeFeatureCard").classList.toggle("active", !!S.humanizeWithMaia || (automatic.active && automatic.maiaElo != null));
+    $("humanizeFeatureCard").classList.toggle("active", !!S.humanizeWithMaia || S.liveEngine === "maia" || (automatic.active && automatic.maiaElo != null));
     $("autoOpponentStatus").textContent = mode.cls !== "bot"
       ? "Turns on automatically in computer games."
       : automatic.opponentElo == null
@@ -822,22 +869,23 @@ self.BMLivePanel = () => {
       : S.maiaRatingMode === "auto" && ratingInUse == null
         ? "Opponent rating not found"
         : "";
-    $("maiaRating").textContent = ratingInUse == null ? "No rating to match" : ratingTarget == null ? "No matching level" : `Playing like a ${ratingInUse}-rated player`;
+    $("maiaRating").textContent = ratingInUse == null ? (S.liveEngine === "maia" ? "Using default Maia level 1500" : "No rating to match") : ratingTarget == null ? "No matching level" : `Playing like a ${ratingInUse}-rated player`;
     if (!maiaEnabled) {
       $("maiaMove").textContent = automatic.active
         ? automatic.maiaElo == null ? "Showing the engine's best move. This bot's rating is outside the human-like range." : "Ready. Moves will match this bot's level."
         : "Off. You're seeing the engine's best move.";
       $("maiaNote").textContent = "";
+      if (S.liveEngine === "maia") $("maiaNote").textContent = `Top move probability: ${maiaResp.moves?.[0]?.probability != null ? (maiaResp.moves[0].probability * 100).toFixed(1) + "%" : "—"}. Stockfish provides the position evaluation.`;
     } else if (!st || !board) {
       $("maiaMove").textContent = "Waiting for the game…";
       $("maiaNote").textContent = "";
     } else if (maiaStatus === "loading") {
-      $("maiaMove").textContent = "Picking a human-like move…";
+      $("maiaMove").textContent = S.liveEngine === "maia" ? "Maia is predicting a move…" : "Picking a human-like move…";
       $("maiaNote").textContent = `Matching a player rated about ${ratingInUse}.`;
     } else if (maiaResp && maiaStatus === "ready") {
       const humanSan = maiaResp.san || B.sanOf(resp.fen, maiaResp.move);
       const stockfishSan = B.sanOf(resp.fen, resp.stockfishMove);
-      $("maiaMove").textContent = `Play ${humanSan}`;
+      $("maiaMove").textContent = S.liveEngine === "maia" ? `Maia suggests ${humanSan}` : `Play ${humanSan}`;
       $("maiaNote").textContent = (humanSan === stockfishSan ? `Also the engine's top choice. Picked from ${maiaResp.candidateCount} good moves.` : `A real player would likely choose this over the engine's top move (${stockfishSan}). Picked from ${maiaResp.candidateCount} good moves.`);
     } else {
       $("maiaMove").textContent = maiaStatus || "Waiting for the engine…";
@@ -888,7 +936,7 @@ self.BMLivePanel = () => {
     const akey = stateKey(board);
     if (akey !== lastArrowKey || !arrowFeature.element || !board.contains(arrowFeature.element)) {
       lastArrowKey = akey;
-      const list = (!shouldHumanizeWithMaia() || maiaStatus !== "loading") && (!S.peek || peekHeld) ? buildArrows() : [];
+      const list = (!(S.liveEngine === "maia" || shouldHumanizeWithMaia()) || maiaStatus !== "loading") && (!S.peek || peekHeld) ? buildArrows() : [];
       if (!list.length) clearArrows();
       else { const sig = JSON.stringify(list) + st.flipped; if (!arrowFeature.element || !board.contains(arrowFeature.element) || arrowFeature.signature !== sig) drawArrows(board, st.flipped, list, sig); }
     }

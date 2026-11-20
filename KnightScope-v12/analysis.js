@@ -265,10 +265,13 @@
   }
 
   function renderEvalBar() {
-    const A = S.A[S.cur]; if (!A) { $("evfill").style.height = "50%"; $("evtxt").textContent = "…"; return; }
-    const turn = C.fromFen(S.fens[S.cur]).turn, sc = score(A.lines[0]), wp = W(turn === "w" ? sc : -sc);
-    $("evfill").style.height = (S.flip ? 100 - wp : wp) + "%"; $("evfill").style.bottom = S.flip ? "auto" : "0"; $("evfill").style.top = S.flip ? "0" : "auto";
-    const t = A.terminal ? (A.mate ? "#" : "½") : fmtW(sc, turn).replace("+", ""); $("evtxt").textContent = t;
+    const bar = $("evbar"), fill = $("evfill"), label = $("evtxt");
+    const A = S.A[S.cur];
+    if (!A || !A.lines || !A.lines[0]) { fill.style.height = "50%"; label.textContent = "…"; bar.setAttribute("aria-valuenow", "50"); bar.setAttribute("aria-valuetext", "Evaluation pending"); return; }
+    const turn = C.fromFen(S.fens[S.cur]).turn, sc = score(A.lines[0]), wp = Math.max(0, Math.min(100, W(turn === "w" ? sc : -sc)));
+    fill.style.height = wp + "%"; fill.style.bottom = S.flip ? "auto" : "0"; fill.style.top = S.flip ? "0" : "auto";
+    const t = A.terminal ? (A.mate ? "#" : "½") : fmtW(sc, turn).replace("+", ""); label.textContent = t;
+    bar.setAttribute("aria-valuenow", String(Math.round(wp))); bar.setAttribute("aria-valuetext", `${t} from White perspective`);
     $("evtxt").style.top = S.flip ? "auto" : "0"; $("evtxt").style.bottom = S.flip ? "0" : "auto";
   }
 
