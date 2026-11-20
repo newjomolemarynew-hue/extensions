@@ -58,7 +58,7 @@
 
   // ================= loading a game =================
   function setGame(meta, startFen, plies, headers) {
-    S.token++; if (eng) eng.stop();
+    S.token++; if (eng) eng.stop(); if (studyEngine) { studyEngine.dispose(); studyEngine = null; } S.study = null;
     Object.assign(S, { game: meta, startFen, plies, headers, profiles: {}, fens: [startFen, ...plies.map((p) => p.fenAfter)], A: [], R: [], cur: 0, summary: null });
     S.flip = false; if (meta && meta.userColor === "black") S.flip = true;
     renderAll(); loadPlayerProfiles(meta, headers, S.token); runAnalysis();
@@ -526,7 +526,7 @@
   $("moves").addEventListener("click", (e) => { const b = e.target.closest("[data-i]"); if (b) go(+b.dataset.i); });
   $("chart").addEventListener("click", (e) => { const r = $("chart").getBoundingClientRect(); go(Math.round(((e.clientX - r.left) / r.width) * (S.fens.length - 1))); });
   $("engineSelect").addEventListener("change", (e) => { const next=e.target.value, meta=ENGINE_META[next]; if(!meta||!meta.bundled){e.target.value=S.engine;return;} S.engine=next; sset({bmAnalysisEngine:S.engine}); if(S.plies.length){S.token++;if(eng){eng.stop();eng.dispose();eng=null;}S.A=[];S.R=[];S.summary=null;runAnalysis();} });
-  $("speed").addEventListener("change", () => { if (S.plies.length) { S.token++; if (eng) eng.stop(); S.A = []; S.R = []; S.summary = null; runAnalysis(); } });
+  $("speed").addEventListener("change", () => { if (S.study) { S.study.A[S.study.cur] = null; analyzeStudy(); } else if (S.plies.length) { S.token++; if (eng) eng.stop(); S.A = []; S.R = []; S.summary = null; runAnalysis(); } });
   addEventListener("keydown", (e) => {
     if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
     if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) e.preventDefault();
