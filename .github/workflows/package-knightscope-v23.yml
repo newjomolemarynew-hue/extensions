@@ -30,7 +30,7 @@ jobs:
           if (/spotify|lovable\\.app/i.test(fs.readFileSync(path.join(root,'background.js'),'utf8'))) throw new Error('External integration remains in background service worker');
           const livePanel = fs.readFileSync(path.join(root,'features/live-panel.js'),'utf8');
           if (livePanel.includes('BMSpotifyWidget') || livePanel.includes('type: "warm"')) throw new Error('Removed Spotify or eager-engine code remains in live panel');
-          const panelTemplate = fs.readFileSync(path.join(root,'features/panel-template.js'),'utf8');
+          const panelTemplateForAutoPlay = fs.readFileSync(path.join(root,'features/panel-template.js'),'utf8');
           for (const id of ['liveMaiaElo','liveEngineElo','maiaElo','elo']) if (!panelTemplate.includes('type="number" id="'+id+'" min="100" max="3200"')) throw new Error('Missing 100–3200 numeric input: '+id);
           if (!livePanel.includes('Math.max(100, Math.min(3200, Math.round(parsed)))')) throw new Error('Numeric Elo input validation missing');
           if (!livePanel.includes('const on = (t, e, f, options) =>') || !livePanel.includes('on(window, "keydown", toggleBestMove, true);')) throw new Error('Alt+B capture-mode registration missing');
@@ -41,8 +41,8 @@ jobs:
           const panelTemplate = fs.readFileSync(path.join(root,'features/panel-template.js'),'utf8');
           if (!livePanel.includes('canAutoPlay: () => mode.cls === "bot"')) throw new Error('Autoplay must remain bot-game-only');
           if (!autoPlay.includes('schedule(beginMove, delay, fen, expectedGeneration)')) throw new Error('Configurable autoplay delay scheduling missing');
-          for (const id of ['autoPlayDelay','autoPlayDelayMin','autoPlayDelayMax']) if (!panelTemplate.includes('id="'+id+'"')) throw new Error('Missing autoplay delay control: '+id);
-          if (!panelTemplate.includes('data-key="autoPlayDelayMode"')) throw new Error('Missing fixed/random autoplay delay selector');
+          for (const id of ['autoPlayDelay','autoPlayDelayMin','autoPlayDelayMax']) if (!panelTemplateForAutoPlay.includes('id="'+id+'"')) throw new Error('Missing autoplay delay control: '+id);
+          if (!panelTemplateForAutoPlay.includes('data-key="autoPlayDelayMode"')) throw new Error('Missing fixed/random autoplay delay selector');
           const analysis = fs.readFileSync(path.join(root,'analysis.js'),'utf8');
           if (analysis.split('BMCustomization.watch(').length - 1 !== 1) throw new Error('Analysis Board has duplicate customization watchers');
           if (fs.readFileSync(path.join(root,'content.js'),'utf8').includes('var As=500,')) throw new Error('Game observer heartbeat is not throttled');
