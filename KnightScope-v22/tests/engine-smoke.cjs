@@ -51,7 +51,8 @@ const positions = [
   ["en passant available", "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1"],
   ["checkmate terminal position", "7k/6Q1/5K2/8/8/8/8/8 b - - 0 1", "none"],
   ["stalemate terminal position", "7k/5Q2/6K1/8/8/8/8/8 b - - 0 1", "none"]
-];
+ ];
+if (positions.length !== 8) throw new Error("V22 must cover eight standard and edge-case positions");
 
 async function main() {
   await new Promise(resolve => server.listen(4178, "127.0.0.1", resolve));
