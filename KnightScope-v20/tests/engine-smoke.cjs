@@ -7,7 +7,7 @@ const root = path.resolve(process.env.KNIGHTSCOPE_ROOT || "KnightScope-v20");
 const mime = { ".html": "text/html", ".js": "text/javascript", ".wasm": "application/wasm", ".css": "text/css" };
 if (!fs.existsSync(path.join(root, "manifest.json"))) throw new Error("KnightScope test root not found: " + root);
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
-if (manifest.version !== "20.0.0") throw new Error("Smoke tests must run against V17; loaded " + manifest.version);
+if (manifest.version !== "20.0.0") throw new Error("Smoke tests must run against V20; loaded " + manifest.version);
 const livePanel = fs.readFileSync(path.join(root, "features/live-panel.js"), "utf8");
 for (const [label, check] of [
   ["Alt+B capture registration", livePanel.includes('on(window, "keydown", toggleBestMove, true);')],
