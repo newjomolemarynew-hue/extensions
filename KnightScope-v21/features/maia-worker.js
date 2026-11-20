@@ -95,7 +95,7 @@ async function drain() {
 
 self.onmessage = ({ data }) => {
   if (data?.type === 'ANALYZE') {
-    if (typeof data.fen !== 'string' || data.fen.length > 128 || data.fen.trim().split(/\\s+/).length !== 6) {
+    if (typeof data.fen !== 'string' || data.fen.length > 128 || data.fen.trim().split(/\s+/).length !== 6) {
       self.postMessage({ type: 'MAIA_ERROR', requestId: data.requestId, error: 'A FEN position is required' });
       return;
     }
